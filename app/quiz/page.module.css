@@ -80,6 +80,24 @@
   width: 100%;
 }
 
+/* Two-option layout: place options side-by-side on small+ screens */
+.optionsListTwo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+@media (max-width: 420px) {
+  .optionsListTwo {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Ensure option cards stretch equally in grid */
+.optionsListTwo .optionCard {
+  height: 100%;
+}
+
 .optionCard {
   background: #ffffff;
   border: 2px solid #e0e0e0;
@@ -117,10 +135,30 @@
   gap: 12px;
 }
 
+/* Centered content for two-option layout */
+.optionContentCenter {
+  justify-content: center;
+}
+
 .optionText {
   font-size: 16px;
   color: #333333;
   flex: 1;
+}
+
+.optionTextCenter {
+  text-align: center;
+  flex: 0;
+}
+
+/* Hide radio circle visually for two-option layout but keep it accessible */
+.optionContentCenter :global(input[type="radio"]) {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
 }
 
 .nextButton {

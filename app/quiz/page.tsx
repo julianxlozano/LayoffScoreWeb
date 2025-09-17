@@ -24,6 +24,7 @@ export default function QuizPage() {
   const [selectedOption, setSelectedOption] = useState("");
 
   const currentQuestion = QUIZ_QUESTIONS[currentQuestionIndex];
+  const isTwoOption = currentQuestion.options.length === 2;
   const progress = ((currentQuestionIndex + 1) / QUIZ_QUESTIONS.length) * 100;
 
   const handleNext = () => {
@@ -106,7 +107,11 @@ export default function QuizPage() {
             onChange={setSelectedOption}
             className={styles.optionsGroup}
           >
-            <div className={styles.optionsList}>
+            <div
+              className={`${styles.optionsList} ${
+                isTwoOption ? styles.optionsListTwo : ""
+              }`}
+            >
               {currentQuestion.options.map((option) => (
                 <Card
                   key={option}
@@ -115,9 +120,21 @@ export default function QuizPage() {
                   }`}
                   onClick={() => setSelectedOption(option)}
                 >
-                  <div className={styles.optionContent}>
-                    <Radio value={option} color="red" size="md" />
-                    <Text className={styles.optionText}>{option}</Text>
+                  <div
+                    className={`${styles.optionContent} ${
+                      isTwoOption ? styles.optionContentCenter : ""
+                    }`}
+                  >
+                    {!isTwoOption && (
+                      <Radio value={option} color="red" size="md" />
+                    )}
+                    <Text
+                      className={`${styles.optionText} ${
+                        isTwoOption ? styles.optionTextCenter : ""
+                      }`}
+                    >
+                      {option}
+                    </Text>
                   </div>
                 </Card>
               ))}
