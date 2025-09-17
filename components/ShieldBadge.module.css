@@ -1,0 +1,11 @@
+.wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  filter: drop-shadow(0 8px 30px rgba(255, 68, 68, 0.35));
+}
+
+.svg {
+  display: block;
+}

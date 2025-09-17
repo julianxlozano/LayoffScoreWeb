@@ -1,0 +1,37 @@
+.container {
+  position: relative;
+  width: 220px;
+  height: 220px;
+}
+
+.progressCircle {
+  transition: stroke-dashoffset 1s ease-in-out;
+  animation: draw 1s ease-in-out;
+}
+
+@keyframes draw {
+  from {
+    stroke-dashoffset: 691.15;
+  }
+}
+
+.centerOverlay {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.scoreText {
+  font-size: 48px;
+  font-weight: bold;
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.riskLevelText {
+  font-size: 16px;
+  color: #ffffff;
+  opacity: 0.9;
+}

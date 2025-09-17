@@ -1,0 +1,156 @@
+.gradient {
+  background: linear-gradient(180deg, #1a1a1a 0%, #2d1f1f 100%);
+  min-height: calc(100vh - 64px);
+  padding: 40px 0;
+}
+
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.headerSection {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.backButton {
+  color: #ffffff;
+  transition: all 0.2s;
+}
+
+.backButton:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: translateX(-2px);
+}
+
+.progressContainer {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.progressText {
+  color: #ffffff;
+  margin-bottom: 12px;
+  display: block;
+}
+
+.progressBar {
+  --mantine-color-red-filled: #ff4444;
+}
+
+.progressBar [data-progress] {
+  background-color: rgba(255, 68, 68, 0.15) !important; /* track */
+}
+
+.progressBar [role="progressbar"] {
+  background: #ff4444 !important; /* filled bar matches Next button */
+}
+
+.questionCard {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 32px;
+  border-radius: 16px;
+  backdrop-filter: blur(10px);
+}
+
+.questionText {
+  font-size: 24px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 32px;
+  line-height: 1.4;
+}
+
+.optionsGroup {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 28px !important;
+}
+
+.optionsList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.optionCard {
+  background: #ffffff;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.optionCard:hover {
+  border-color: #ff9999;
+  background: #fff5f5;
+}
+
+.selectedOptionCard {
+  border-color: #c92a2a !important;
+  background: #fff1f1 !important;
+}
+
+.selectedOptionCard::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background: #c92a2a;
+}
+
+.optionContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.optionText {
+  font-size: 16px;
+  color: #333333;
+  flex: 1;
+}
+
+.nextButton {
+  width: 100%;
+  height: 56px;
+  font-size: 18px;
+  font-weight: bold;
+  background-color: #ff4444;
+  border: none;
+  transition: all 0.3s ease;
+  margin-top: 16px;
+}
+
+.nextButton:hover:not(:disabled) {
+  background-color: #ff6666;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(255, 68, 68, 0.3);
+}
+
+/* Ensure disabled Mantine button stays visible */
+.nextButton:disabled,
+.nextButton[data-disabled] {
+  background-color: #6b7280 !important; /* slate-500 */
+  color: #e5e7eb !important; /* text gray-200 */
+  opacity: 1 !important;
+  cursor: not-allowed;
+  box-shadow: none !important;
+}
+
+/* Keep label readable when disabled */
+.nextButton[data-disabled] .mantine-Button-label {
+  color: #e5e7eb !important;
+}

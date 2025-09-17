@@ -1,36 +1,117 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LayoffScore Web App
+
+A mobile-optimized web application for assessing AI job displacement risk, built with Next.js and Mantine UI.
+
+## Features
+
+- **Landing Page**: Beautiful gradient hero section with call-to-action
+- **Quiz Flow**: 12-question assessment to evaluate AI replacement risk
+- **Paywall**: Mock payment screen (pay button currently bypasses to results)
+- **Results Dashboard**: Dynamic risk score visualization with:
+  - Animated donut chart showing risk percentage
+  - Color-coded risk levels (Low, Moderate, Elevated, High)
+  - Dynamic gradient backgrounds based on risk level
+  - Personalized tips and recommendations
+
+## Tech Stack
+
+- **Next.js 14** with App Router
+- **TypeScript** for type safety
+- **Mantine UI** for components
+- **CSS Modules** for styling (no Tailwind)
+- **Axios** for API calls
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+ and npm
+- Backend server running at `http://localhost:8000`
+
+### Installation
+
+```bash
+npm install
+```
+
+### Development
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Visit [http://localhost:3000](http://localhost:3000)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Build for Production
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+├── app/              # Next.js app directory
+│   ├── layout.tsx    # Root layout with header
+│   ├── page.tsx      # Landing page
+│   ├── quiz/         # Quiz page
+│   ├── paywall/      # Paywall page
+│   └── results/      # Results page
+├── components/       # Reusable components
+│   ├── Header.tsx    # Site header
+│   └── ScoreDonut.tsx # Score visualization
+├── constants/        # App constants
+│   └── quiz.ts       # Quiz questions
+├── utils/           # Utility functions
+│   ├── api.ts       # API calls
+│   └── colors.ts    # Color utilities
+└── styles/          # Global styles
+    └── globals.css  # Global CSS
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Design Features
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- **Dark Theme**: Consistent dark background with gradient overlays
+- **Gradient Effects**: Dynamic gradients that change based on risk level
+- **Responsive Design**: Mobile-first approach, optimized for all screen sizes
+- **Smooth Animations**: Subtle transitions and hover effects
+- **Modular Architecture**: Clean separation of concerns with utilities and components
 
-## Deploy on Vercel
+## API Integration
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+The app connects to the backend API at `http://localhost:8000` for:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Creating anonymous users
+- Calculating quiz scores
+- Retrieving personalized recommendations
+
+Falls back to local calculation if API is unavailable.
+
+## Payment Integration
+
+Currently, the paywall page has a mock "pay" button that directly navigates to the results page. Future implementation will integrate actual payment processing.
+
+## Color Scheme
+
+- **Primary**: #FF6B6B (Red)
+- **Background**: #1A1A1A to #2D1F1F gradient
+- **Risk Levels**:
+  - Low: Green (#22C55E)
+  - Moderate: Yellow (#FACC15)
+  - Elevated: Orange (#FFB020)
+  - High: Red (#FF5A5F)
+
+## Future Enhancements
+
+- [ ] Integrate real payment processing (Stripe/PayPal)
+- [ ] Add user authentication
+- [ ] Save quiz results to user profile
+- [ ] Add social sharing functionality
+- [ ] Implement email capture
+- [ ] Add more detailed action plans
+- [ ] Create admin dashboard
+
+## License
+
+Private - All rights reserved
