@@ -2,6 +2,7 @@
 
 import { Group } from "@mantine/core";
 import styles from "./Header.module.css";
+import ShieldBadge from "@/components/ShieldBadge";
 
 export default function Header() {
   return (
@@ -9,7 +10,9 @@ export default function Header() {
       <div className={styles.container}>
         <Group justify="space-between" h="100%">
           <div className={styles.logo}>
-            <span className={styles.logoIcon}>⚡</span>
+            <div className={styles.logoBadge}>
+              <ShieldBadge size={30} />
+            </div>
             <span className={styles.logoText}>LayoffScore</span>
           </div>
         </Group>
