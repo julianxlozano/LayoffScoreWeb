@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Container, Text, Button, Loader, Center, Stack } from "@mantine/core";
 import { IconCircleCheck } from "@tabler/icons-react";
 import { verifyPayment } from "@/utils/payment";
 import styles from "./page.module.css";
 
-export default function PaymentSuccessPage() {
+function PaymentSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [verifying, setVerifying] = useState(true);
@@ -46,7 +46,7 @@ export default function PaymentSuccessPage() {
             router.push("/results");
           }, 2000);
         } else {
-          router.push("/paywall");
+          router.push("/unlock-score");
         }
       }
 
@@ -76,15 +76,15 @@ export default function PaymentSuccessPage() {
       <div className={styles.container}>
         <Container size="sm">
           <Stack align="center" gap="xl" className={styles.content}>
-            <Text size="xl" weight={600} color="red">
+            <Text size="xl" fw={600} color="red">
               Payment verification failed
             </Text>
-            <Text size="md" color="dimmed" align="center">
+            <Text size="md" color="dimmed" ta="center">
               There was an issue verifying your payment. Please try again.
             </Text>
             <Button
               size="lg"
-              onClick={() => router.push("/paywall")}
+              onClick={() => router.push("/unlock-score")}
               className={styles.button}
             >
               Back to Payment
@@ -100,10 +100,10 @@ export default function PaymentSuccessPage() {
       <Container size="sm">
         <Stack align="center" gap="xl" className={styles.content}>
           <IconCircleCheck size={80} color="#22c55e" stroke={1.5} />
-          <Text size="xl" weight={600} className={styles.title}>
+          <Text size="xl" fw={600} className={styles.title}>
             Payment Successful!
           </Text>
-          <Text size="md" color="dimmed" align="center">
+          <Text size="md" color="dimmed" ta="center">
             Thank you for your purchase. You're being redirected to your AI risk
             assessment...
           </Text>
@@ -111,5 +111,26 @@ export default function PaymentSuccessPage() {
         </Stack>
       </Container>
     </div>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className={styles.container}>
+          <Center h="100vh">
+            <Stack align="center" gap="lg">
+              <Loader size="lg" color="red" />
+              <Text size="lg" color="dimmed">
+                Loading...
+              </Text>
+            </Stack>
+          </Center>
+        </div>
+      }
+    >
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }
