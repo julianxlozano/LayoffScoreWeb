@@ -61,11 +61,11 @@ export default function QuizPage() {
       return answer === "Yes";
     });
 
-    // Store answers in sessionStorage for paywall and results pages
+    // Store answers in sessionStorage for unlock and results pages
     sessionStorage.setItem("quizAnswers", JSON.stringify(booleanAnswers));
 
-    // Navigate to paywall
-    router.push("/paywall");
+    // Navigate to unlock score page
+    router.push("/unlock-score");
   };
 
   return (

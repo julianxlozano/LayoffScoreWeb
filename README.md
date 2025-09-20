@@ -6,7 +6,7 @@ A mobile-optimized web application for assessing AI job displacement risk, built
 
 - **Landing Page**: Beautiful gradient hero section with call-to-action
 - **Quiz Flow**: 12-question assessment to evaluate AI replacement risk
-- **Paywall**: Mock payment screen (pay button currently bypasses to results)
+- **Unlock Score**: Payment screen with Stripe, Google Pay, and Apple Pay integration
 - **Results Dashboard**: Dynamic risk score visualization with:
   - Animated donut chart showing risk percentage
   - Color-coded risk levels (Low, Moderate, Elevated, High)
@@ -56,7 +56,7 @@ npm start
 │   ├── layout.tsx    # Root layout with header
 │   ├── page.tsx      # Landing page
 │   ├── quiz/         # Quiz page
-│   ├── paywall/      # Paywall page
+│   ├── unlock-score/ # Unlock score payment page
 │   └── results/      # Results page
 ├── components/       # Reusable components
 │   ├── Header.tsx    # Site header
@@ -90,7 +90,7 @@ Falls back to local calculation if API is unavailable.
 
 ## Payment Integration
 
-Currently, the paywall page has a mock "pay" button that directly navigates to the results page. Future implementation will integrate actual payment processing.
+The unlock score page features full payment integration with Stripe, including support for Apple Pay on iOS devices and Google Pay on Chrome browsers. A standard card payment option is available as a universal fallback.
 
 ## Color Scheme
 

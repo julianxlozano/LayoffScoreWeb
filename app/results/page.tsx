@@ -95,6 +95,16 @@ export default function ResultsPage() {
 
   useEffect(() => {
     const loadResults = async () => {
+      // Check for payment verification (skip in dev mode with SCORE_OVERRIDE)
+      if (SCORE_OVERRIDE === null) {
+        const paymentVerified = sessionStorage.getItem("payment_verified");
+        if (paymentVerified !== "true") {
+          // No payment verification, redirect to unlock score page
+          router.push("/unlock-score");
+          return;
+        }
+      }
+
       if (SCORE_OVERRIDE !== null) {
         setResult(makeResultFromScore(SCORE_OVERRIDE));
         setLoading(false);
