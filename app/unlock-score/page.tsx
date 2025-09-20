@@ -18,36 +18,25 @@ import {
   IconStar,
   IconTrendingUp,
   IconShield,
-  IconBrandApple,
-  IconBrandGoogle,
   IconCreditCard,
 } from "@tabler/icons-react";
-import {
-  redirectToCheckout,
-  detectDevice,
-  isApplePayAvailable,
-  isGooglePayAvailable,
-  stripePromise,
-} from "@/utils/payment";
+import { Elements } from "@stripe/react-stripe-js";
+import { redirectToCheckout, stripePromise } from "@/utils/payment";
+import ExpressCheckout from "@/components/ExpressCheckout";
 import styles from "./page.module.css";
 
 export default function UnlockScorePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [paymentMethods, setPaymentMethods] = useState({
-    applePay: false,
-    googlePay: false,
-    showMobileOptions: false,
-  });
+  const [error, setError] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | undefined>(undefined);
 
+  // Get userId from sessionStorage on client side
   useEffect(() => {
-    // Detect device and available payment methods
-    const device = detectDevice();
-    setPaymentMethods({
-      applePay: device.isIOS && isApplePayAvailable(),
-      googlePay: isGooglePayAvailable(), // Works on any Chrome browser (desktop or mobile)
-      showMobileOptions: device.isMobile,
-    });
+    if (typeof window !== 'undefined') {
+      const storedUserId = sessionStorage.getItem("userId") || undefined;
+      setUserId(storedUserId);
+    }
   }, []);
 
   // Mock payment bypass (commented out for production)
@@ -57,108 +46,23 @@ export default function UnlockScorePage() {
 
   const handleStripeCheckout = async () => {
     setLoading(true);
+    setError(null);
     try {
-      // Get user ID from session storage if available
-      const userId = sessionStorage.getItem("userId") || undefined;
       await redirectToCheckout(userId);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Payment error:", error);
-      alert("Payment failed. Please try again.");
+      setError("Payment failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  const handleApplePay = async () => {
-    setLoading(true);
-    try {
-      const stripe = await stripePromise;
-      if (!stripe) {
-        throw new Error("Stripe not initialized");
-      }
-
-      // Create payment request for Apple Pay
-      const paymentRequest = stripe.paymentRequest({
-        country: "US",
-        currency: "usd",
-        total: {
-          label: "LayoffScore AI Risk Assessment",
-          amount: 1900, // $19.00 in cents
-        },
-        requestPayerName: true,
-        requestPayerEmail: true,
-      });
-
-      // Check if Apple Pay is available
-      const canMakePayment = await paymentRequest.canMakePayment();
-      if (!canMakePayment || !canMakePayment.applePay) {
-        // Fallback to regular Stripe checkout
-        await handleStripeCheckout();
-        return;
-      }
-
-      // Show Apple Pay sheet
-      paymentRequest.on("paymentmethod", async (ev) => {
-        // Handle payment here - normally you'd confirm with backend
-        // For now, we'll just complete the payment
-        ev.complete("success");
-        router.push("/results");
-      });
-
-      paymentRequest.show();
-    } catch (error) {
-      console.error("Apple Pay error:", error);
-      // Fallback to Stripe checkout
-      await handleStripeCheckout();
-    } finally {
-      setLoading(false);
-    }
+  const handlePaymentSuccess = () => {
+    router.push("/results");
   };
 
-  const handleGooglePay = async () => {
-    setLoading(true);
-    try {
-      const stripe = await stripePromise;
-      if (!stripe) {
-        throw new Error("Stripe not initialized");
-      }
-
-      // Create payment request for Google Pay
-      const paymentRequest = stripe.paymentRequest({
-        country: "US",
-        currency: "usd",
-        total: {
-          label: "LayoffScore AI Risk Assessment",
-          amount: 1900, // $19.00 in cents
-        },
-        requestPayerName: true,
-        requestPayerEmail: true,
-      });
-
-      // Check if Google Pay is available
-      const canMakePayment = await paymentRequest.canMakePayment();
-      if (!canMakePayment) {
-        // Fallback to regular Stripe checkout
-        await handleStripeCheckout();
-        return;
-      }
-
-      // Show Google Pay sheet
-      paymentRequest.on("paymentmethod", async (ev) => {
-        // Handle payment here - normally you'd confirm with backend
-        // For now, we'll just complete the payment
-        ev.complete("success");
-        router.push("/results");
-      });
-
-      paymentRequest.show();
-    } catch (error) {
-      console.error("Google Pay error:", error);
-      // Fallback to Stripe checkout
-      await handleStripeCheckout();
-    } finally {
-      setLoading(false);
-    }
+  const handlePaymentError = (errorMessage: string) => {
+    setError(errorMessage);
   };
 
   const features = [
@@ -179,6 +83,20 @@ export default function UnlockScorePage() {
       text: "Weekly progress tracking",
     },
   ];
+
+  // Stripe Elements options
+  const elementsOptions = {
+    mode: 'payment' as const,
+    amount: 1900, // $19.00 in cents
+    currency: 'usd',
+    appearance: {
+      theme: 'night' as const,
+      variables: {
+        colorPrimary: '#ff6b6b',
+        borderRadius: '8px',
+      },
+    },
+  };
 
   return (
     <div className={styles.gradient}>
@@ -222,92 +140,56 @@ export default function UnlockScorePage() {
                 ))}
               </Stack>
 
-              {/* Payment Buttons */}
-              <Stack gap="sm">
-                {/* Show Apple Pay for iOS devices */}
-                {paymentMethods.applePay && (
-                  <Button
-                    size="lg"
-                    className={styles.applePayButton}
-                    onClick={handleApplePay}
-                    disabled={loading}
-                    fullWidth
-                    leftSection={<IconBrandApple size={24} />}
-                    styles={{
-                      root: {
-                        backgroundColor: "#000",
-                        "&:hover": {
-                          backgroundColor: "#333",
-                        },
-                      },
-                    }}
-                  >
-                    {loading ? <Loader size="sm" color="white" /> : "Apple Pay"}
-                  </Button>
+              {/* Express Checkout (Apple Pay, Google Pay, etc.) */}
+              <Elements stripe={stripePromise} options={elementsOptions}>
+                <ExpressCheckout
+                  amount={1900}
+                  userId={userId}
+                  onPaymentSuccess={handlePaymentSuccess}
+                  onPaymentError={handlePaymentError}
+                />
+              </Elements>
+
+              {/* Divider */}
+              <Divider
+                label="Or pay with card"
+                labelPosition="center"
+                className={styles.divider}
+              />
+
+              {/* Traditional Card Payment Button */}
+              <Button
+                size="lg"
+                className={styles.payButton}
+                onClick={handleStripeCheckout}
+                disabled={loading}
+                fullWidth
+                leftSection={!loading && <IconCreditCard size={24} />}
+              >
+                {loading ? (
+                  <Loader size="sm" color="white" />
+                ) : (
+                  "Pay with Card"
                 )}
+              </Button>
 
-                {/* Show Google Pay for Chrome browsers (desktop and mobile) */}
-                {paymentMethods.googlePay && (
-                  <Button
-                    size="lg"
-                    className={styles.googlePayButton}
-                    onClick={handleGooglePay}
-                    disabled={loading}
-                    fullWidth
-                    leftSection={<IconBrandGoogle size={24} />}
-                    styles={{
-                      root: {
-                        backgroundColor: "#4285F4",
-                        "&:hover": {
-                          backgroundColor: "#357AE8",
-                        },
-                      },
-                    }}
-                  >
-                    {loading ? (
-                      <Loader size="sm" color="white" />
-                    ) : (
-                      "Google Pay"
-                    )}
-                  </Button>
-                )}
+              {/* Error Display */}
+              {error && (
+                <Text size="sm" color="red" ta="center">
+                  {error}
+                </Text>
+              )}
 
-                {/* Show divider if mobile payment options are shown */}
-                {(paymentMethods.applePay || paymentMethods.googlePay) && (
-                  <Divider
-                    label="Or pay with card"
-                    labelPosition="center"
-                    className={styles.divider}
-                  />
-                )}
-
-                {/* Main Stripe Checkout Button */}
-                <Button
-                  size="lg"
-                  className={styles.payButton}
-                  onClick={handleStripeCheckout}
-                  disabled={loading}
-                  fullWidth
-                  leftSection={!loading && <IconCreditCard size={24} />}
-                >
-                  {loading ? (
-                    <Loader size="sm" color="white" />
-                  ) : (
-                    "Pay with Card"
-                  )}
-                </Button>
-
-                {/* Mock Payment Button - COMMENTED OUT FOR PRODUCTION */}
-                {/* <Button
-                  size="lg"
-                  variant="outline"
-                  onClick={handleMockPay}
-                  fullWidth
-                  style={{ marginTop: "8px" }}
-                >
-                  Skip Payment (Dev Only)
-                </Button> */}
-              </Stack>
+              {/* Mock Payment Button - COMMENTED OUT FOR PRODUCTION */}
+              {/* <Button
+                size="lg"
+                variant="outline"
+                onClick={handleMockPay}
+                fullWidth
+                style={{ marginTop: "8px" }}
+              >
+                Skip Payment (Dev Only)
+              </Button> */}
 
               {/* Trust indicators */}
               <Stack gap="xs" align="center">

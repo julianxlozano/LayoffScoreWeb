@@ -2,11 +2,15 @@
 
 ## Overview
 
-This app uses Stripe for payment processing with support for:
+This app uses Stripe's Express Checkout Element for payment processing with automatic support for:
 
-- **Chrome (Desktop/Mobile)**: Google Pay (when available) + Card fallback
-- **Safari/iOS**: Apple Pay (when available) + Card fallback
-- **All Browsers**: Universal credit/debit card payment via Stripe Checkout
+- **Apple Pay**: iOS Safari, Chrome/Edge on macOS
+- **Google Pay**: Chrome browsers on any platform  
+- **Link**: Stripe's one-click payment method
+- **PayPal**: Where enabled and supported
+- **Klarna**: Buy now, pay later option
+- **Amazon Pay**: For Amazon customers
+- **Card Payment**: Universal fallback via Stripe Checkout
 
 ## Setup Instructions
 

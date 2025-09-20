@@ -71,43 +71,4 @@ export const redirectToCheckout = async (userId?: string) => {
   }
 };
 
-export const isApplePayAvailable = () => {
-  if (typeof window === "undefined") return false;
-
-  // Check for Apple Pay availability
-  if ((window as any).ApplePaySession) {
-    return (window as any).ApplePaySession.canMakePayments();
-  }
-  return false;
-};
-
-export const isGooglePayAvailable = () => {
-  if (typeof window === "undefined") return false;
-
-  // Check for Google Pay availability
-  // Works on Chrome (desktop and mobile) when Payment Request API is available
-  const isChrome =
-    /chrome/i.test(navigator.userAgent) && !/edge/i.test(navigator.userAgent);
-  return !!(window as any).PaymentRequest && isChrome;
-};
-
-export const detectDevice = () => {
-  if (typeof window === "undefined")
-    return { isMobile: false, isIOS: false, isAndroid: false, isChrome: false };
-
-  const userAgent =
-    navigator.userAgent || navigator.vendor || (window as any).opera;
-  const isMobile =
-    /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
-      userAgent.toLowerCase()
-    );
-  const isIOS = /iphone|ipad|ipod/i.test(userAgent.toLowerCase());
-  const isAndroid = /android/i.test(userAgent.toLowerCase());
-  const isChrome =
-    /chrome/i.test(userAgent.toLowerCase()) &&
-    !/edge/i.test(userAgent.toLowerCase());
-
-  return { isMobile, isIOS, isAndroid, isChrome };
-};
-
 export { stripePromise };

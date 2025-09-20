@@ -6,7 +6,7 @@ A mobile-optimized web application for assessing AI job displacement risk, built
 
 - **Landing Page**: Beautiful gradient hero section with call-to-action
 - **Quiz Flow**: 12-question assessment to evaluate AI replacement risk
-- **Unlock Score**: Payment screen with Stripe, Google Pay, and Apple Pay integration
+- **Unlock Score**: Payment screen with Stripe Express Checkout (Apple Pay, Google Pay, Link, PayPal, etc.)
 - **Results Dashboard**: Dynamic risk score visualization with:
   - Animated donut chart showing risk percentage
   - Color-coded risk levels (Low, Moderate, Elevated, High)
@@ -90,7 +90,7 @@ Falls back to local calculation if API is unavailable.
 
 ## Payment Integration
 
-The unlock score page features full payment integration with Stripe, including support for Apple Pay on iOS devices and Google Pay on Chrome browsers. A standard card payment option is available as a universal fallback.
+The unlock score page features Stripe's Express Checkout Element, which automatically displays available one-click payment methods including Apple Pay, Google Pay, Link, PayPal, Klarna, and Amazon Pay. A traditional card payment option is available as a universal fallback via Stripe Checkout.
 
 ## Color Scheme
 
