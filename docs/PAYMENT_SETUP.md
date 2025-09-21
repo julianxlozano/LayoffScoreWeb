@@ -5,7 +5,7 @@
 This app uses Stripe's Express Checkout Element for payment processing with automatic support for:
 
 - **Apple Pay**: iOS Safari, Chrome/Edge on macOS
-- **Google Pay**: Chrome browsers on any platform  
+- **Google Pay**: Chrome browsers on any platform
 - **Link**: Stripe's one-click payment method
 - **PayPal**: Where enabled and supported
 - **Klarna**: Buy now, pay later option

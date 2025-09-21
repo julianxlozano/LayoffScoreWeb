@@ -33,7 +33,7 @@ export default function UnlockScorePage() {
 
   // Get userId from sessionStorage on client side
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       const storedUserId = sessionStorage.getItem("userId") || undefined;
       setUserId(storedUserId);
     }
@@ -86,14 +86,14 @@ export default function UnlockScorePage() {
 
   // Stripe Elements options
   const elementsOptions = {
-    mode: 'payment' as const,
+    mode: "payment" as const,
     amount: 1900, // $19.00 in cents
-    currency: 'usd',
+    currency: "usd",
     appearance: {
-      theme: 'night' as const,
+      theme: "night" as const,
       variables: {
-        colorPrimary: '#ff6b6b',
-        borderRadius: '8px',
+        colorPrimary: "#ff6b6b",
+        borderRadius: "8px",
       },
     },
   };
@@ -166,11 +166,7 @@ export default function UnlockScorePage() {
                 fullWidth
                 leftSection={!loading && <IconCreditCard size={24} />}
               >
-                {loading ? (
-                  <Loader size="sm" color="white" />
-                ) : (
-                  "Pay with Card"
-                )}
+                {loading ? <Loader size="sm" color="white" /> : "Pay with Card"}
               </Button>
 
               {/* Error Display */}

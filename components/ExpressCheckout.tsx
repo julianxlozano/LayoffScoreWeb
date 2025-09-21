@@ -2,10 +2,22 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useStripe, useElements, ExpressCheckoutElement } from "@stripe/react-stripe-js";
+import {
+  useStripe,
+  useElements,
+  ExpressCheckoutElement,
+} from "@stripe/react-stripe-js";
 import { Loader, Text } from "@mantine/core";
 import { createPaymentIntent } from "@/utils/payment";
 import styles from "./ExpressCheckout.module.css";
+
+// Helper function to detect mobile devices
+const isMobile = () => {
+  if (typeof window === "undefined") return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+    navigator.userAgent
+  );
+};
 
 interface ExpressCheckoutProps {
   amount?: number;
@@ -18,7 +30,7 @@ export default function ExpressCheckout({
   amount = 1900,
   userId,
   onPaymentSuccess,
-  onPaymentError
+  onPaymentError,
 }: ExpressCheckoutProps) {
   const stripe = useStripe();
   const elements = useElements();
@@ -52,7 +64,7 @@ export default function ExpressCheckout({
 
       // Payment succeeded - store verification and redirect
       sessionStorage.setItem("payment_verified", "true");
-      
+
       if (onPaymentSuccess) {
         onPaymentSuccess();
       } else {
@@ -61,7 +73,7 @@ export default function ExpressCheckout({
     } catch (error: any) {
       console.error("Express checkout error:", error);
       const errorMessage = error.message || "Payment failed. Please try again.";
-      
+
       if (onPaymentError) {
         onPaymentError(errorMessage);
       }
@@ -70,18 +82,40 @@ export default function ExpressCheckout({
     }
   };
 
+  // Create payment method order based on device type
+  const getPaymentMethodOrder = () => {
+    const baseOrder = ["googlePay", "link", "applePay", "amazonPay"];
+
+    // Add Cash App Pay for mobile users
+    if (isMobile()) {
+      return ["googlePay", "link", "applePay", "cashapp", "amazonPay"];
+    }
+
+    return baseOrder;
+  };
+
   const expressCheckoutOptions = {
     buttonType: {
-      applePay: 'buy' as const,
-      googlePay: 'buy' as const,
-      paypal: 'buynow' as const,
+      applePay: "buy" as const,
+      googlePay: "buy" as const,
+      cashapp: "pay" as const,
     },
     buttonHeight: 48,
     layout: {
       maxColumns: 2,
       maxRows: 2,
-      overflow: 'auto' as const,
+      overflow: "auto" as const,
     },
+    paymentMethods: {
+      googlePay: "always" as const, // Force Google Pay to show when available
+      // Only enable Apple Pay in production (not localhost)
+      applePay:
+        typeof window !== "undefined" &&
+        window.location.hostname === "localhost"
+          ? ("never" as const)
+          : ("always" as const),
+    },
+    paymentMethodOrder: getPaymentMethodOrder(),
   };
 
   return (
@@ -91,11 +125,16 @@ export default function ExpressCheckout({
           <Loader size="sm" color="white" />
         </div>
       )}
-      
+
       <ExpressCheckoutElement
         options={expressCheckoutOptions}
         onConfirm={handlePayment}
         onReady={({ availablePaymentMethods }) => {
+          // Debug: Log available payment methods
+          console.log("Available payment methods:", availablePaymentMethods);
+          console.log("Is mobile device:", isMobile());
+          console.log("Payment method order:", getPaymentMethodOrder());
+
           // Show the element if payment methods are available
           setCanMakePayment(!!availablePaymentMethods);
         }}

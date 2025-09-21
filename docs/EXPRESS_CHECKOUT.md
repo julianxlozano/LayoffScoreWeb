@@ -7,12 +7,14 @@ LayoffScore now uses Stripe's Express Checkout Element, which provides a unified
 ## Supported Payment Methods
 
 The Express Checkout Element automatically shows available payment methods based on:
+
 - Customer's browser and device
 - Geographic location
 - Stripe account configuration
 - Customer's wallet setup
 
 ### Available Methods:
+
 - **Apple Pay** - iOS Safari, Chrome/Edge on macOS
 - **Google Pay** - Chrome browsers on any platform
 - **Link** - Stripe's one-click payment method
@@ -25,6 +27,7 @@ The Express Checkout Element automatically shows available payment methods based
 ### Components
 
 1. **ExpressCheckout Component** (`/components/ExpressCheckout.tsx`)
+
    - Handles all one-click payment methods
    - Uses Stripe's Payment Intents API
    - Provides loading states and error handling
@@ -38,6 +41,7 @@ The Express Checkout Element automatically shows available payment methods based
 ### Payment Flow
 
 1. **Express Checkout** - User clicks Apple Pay, Google Pay, etc.
+
    - Creates Payment Intent via API
    - Uses native wallet for payment
    - Confirms payment client-side
@@ -52,9 +56,10 @@ The Express Checkout Element automatically shows available payment methods based
 ### Configuration
 
 The Express Checkout Element is configured with:
+
 - **Button Height**: 48px for consistency
 - **Layout**: Max 2 columns, 2 rows with auto overflow
-- **Button Types**: 
+- **Button Types**:
   - Apple Pay: "Buy with Apple Pay"
   - Google Pay: "Buy with Google Pay"
   - PayPal: "Buy Now with PayPal"
@@ -72,6 +77,7 @@ The Express Checkout Element is configured with:
 ## Testing
 
 ### Local Development
+
 1. Ensure `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` is set
 2. Test in different browsers:
    - **Chrome**: Should show Google Pay + Link
@@ -80,6 +86,7 @@ The Express Checkout Element is configured with:
 3. Test with/without wallets set up
 
 ### Test Cases
+
 - Apple Pay (Safari on macOS with card in Wallet)
 - Google Pay (Chrome with Google Pay account)
 - Card payment fallback
@@ -89,23 +96,25 @@ The Express Checkout Element is configured with:
 ## Browser Support
 
 | Browser | Apple Pay | Google Pay | Link | PayPal | Others |
-|---------|-----------|------------|------|---------|---------|
-| Chrome | ✓ (macOS) | ✓ | ✓ | ✓ | ✓ |
-| Safari | ✓ | ✓* | ✓ | ✓ | ✓ |
-| Edge | ✓ (macOS) | ✓ | ✓ | ✓ | ✓ |
-| Firefox | ❌ | ✓* | ❌ | ✓ | ✓ |
+| ------- | --------- | ---------- | ---- | ------ | ------ |
+| Chrome  | ✓ (macOS) | ✓          | ✓    | ✓      | ✓      |
+| Safari  | ✓         | ✓\*        | ✓    | ✓      | ✓      |
+| Edge    | ✓ (macOS) | ✓          | ✓    | ✓      | ✓      |
+| Firefox | ❌        | ✓\*        | ❌   | ✓      | ✓      |
 
-*Requires `paymentMethods.googlePay: 'always'` setting
+\*Requires `paymentMethods.googlePay: 'always'` setting
 
 ## Migration Notes
 
 ### Removed Code
+
 - Custom device detection (`detectDevice`, `isApplePayAvailable`, etc.)
 - Individual payment method buttons
 - Browser-specific logic
 - Payment Request API implementations
 
 ### Simplified Code
+
 - Single Express Checkout component vs multiple buttons
 - Automatic payment method selection
 - Unified error handling
@@ -122,6 +131,7 @@ The Express Checkout Element is configured with:
 ## Security
 
 The Express Checkout Element:
+
 - Never exposes sensitive payment data to our app
 - Handles PCI compliance automatically
 - Uses Stripe's secure tokenization
