@@ -12,6 +12,8 @@ import {
   Progress,
   ActionIcon,
   Card,
+  Textarea,
+  Stack,
 } from "@mantine/core";
 import { IconArrowLeft } from "@tabler/icons-react";
 import { QUIZ_QUESTIONS, mapFirstQuestionToBoolean } from "@/constants/quiz";
@@ -22,12 +24,23 @@ export default function QuizPage() {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<string[]>(new Array(12).fill(""));
   const [selectedOption, setSelectedOption] = useState("");
+  const [jobDescription, setJobDescription] = useState("");
+  const [showJobInput, setShowJobInput] = useState(false);
 
   const currentQuestion = QUIZ_QUESTIONS[currentQuestionIndex];
   const isTwoOption = currentQuestion.options.length === 2;
-  const progress = ((currentQuestionIndex + 1) / QUIZ_QUESTIONS.length) * 100;
+  const totalSteps = QUIZ_QUESTIONS.length + 1; // +1 for job description
+  const currentStep = showJobInput ? totalSteps : currentQuestionIndex + 1;
+  const progress = (currentStep / totalSteps) * 100;
 
   const handleNext = () => {
+    if (showJobInput) {
+      // Submit from job description page
+      if (!jobDescription.trim()) return;
+      submitQuiz(answers);
+      return;
+    }
+
     if (!selectedOption) return;
 
     const newAnswers = [...answers];
@@ -38,12 +51,19 @@ export default function QuizPage() {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
       setSelectedOption(answers[currentQuestionIndex + 1] || "");
     } else {
-      // Submit quiz
-      submitQuiz(newAnswers);
+      // Show job description input after last question
+      setShowJobInput(true);
     }
   };
 
   const handleBack = () => {
+    if (showJobInput) {
+      // Go back to last quiz question
+      setShowJobInput(false);
+      setSelectedOption(answers[QUIZ_QUESTIONS.length - 1] || "");
+      return;
+    }
+
     if (currentQuestionIndex > 0) {
       setCurrentQuestionIndex(currentQuestionIndex - 1);
       setSelectedOption(answers[currentQuestionIndex - 1] || "");
@@ -61,8 +81,9 @@ export default function QuizPage() {
       return answer === "Yes";
     });
 
-    // Store answers in sessionStorage for unlock and results pages
+    // Store answers and job description in sessionStorage
     sessionStorage.setItem("quizAnswers", JSON.stringify(booleanAnswers));
+    sessionStorage.setItem("jobDescription", jobDescription);
 
     // Navigate to unlock score page
     router.push("/unlock-score");
@@ -96,61 +117,108 @@ export default function QuizPage() {
           </div>
         </div>
 
-        {/* Question card */}
-        <Card className={styles.questionCard}>
-          <Text className={styles.questionText}>
-            {currentQuestion.question}
-          </Text>
+        {/* Question card or Job Input */}
+        {showJobInput ? (
+          <Card className={styles.questionCard}>
+            <Stack gap="lg">
+              <div>
+                <Text className={styles.questionText}>
+                  Tell us about your work
+                </Text>
+                <Text size="sm" color="dimmed" mt="sm">
+                  This helps us provide a personalized AI risk analysis tailored
+                  to your specific role and industry.
+                </Text>
+              </div>
 
-          <Radio.Group
-            value={selectedOption}
-            onChange={setSelectedOption}
-            className={styles.optionsGroup}
-          >
-            <div
-              className={`${styles.optionsList} ${
-                isTwoOption ? styles.optionsListTwo : ""
-              }`}
+              <Textarea
+                placeholder="Example: I'm a Senior Software Engineer at a fintech startup. I spend my days writing React code, reviewing PRs, mentoring junior devs, and architecting new features. Our tech stack includes React, Node.js, PostgreSQL, and AWS."
+                value={jobDescription}
+                onChange={(e) => setJobDescription(e.currentTarget.value)}
+                minRows={6}
+                maxRows={10}
+                autosize
+                required
+                styles={{
+                  input: {
+                    fontSize: "16px",
+                    backgroundColor: "rgba(255, 255, 255, 0.05)",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    color: "white",
+                    "&::placeholder": {
+                      color: "rgba(255, 255, 255, 0.5)",
+                    },
+                    "&:focus": {
+                      borderColor: "#ff6b6b",
+                    },
+                  },
+                }}
+              />
+
+              <Text size="xs" color="dimmed">
+                Include your job title, daily activities, tech stack, and any
+                unique aspects of your role.
+              </Text>
+            </Stack>
+          </Card>
+        ) : (
+          <Card className={styles.questionCard}>
+            <Text className={styles.questionText}>
+              {currentQuestion.question}
+            </Text>
+
+            <Radio.Group
+              value={selectedOption}
+              onChange={setSelectedOption}
+              className={styles.optionsGroup}
             >
-              {currentQuestion.options.map((option) => (
-                <Card
-                  key={option}
-                  className={`${styles.optionCard} ${
-                    selectedOption === option ? styles.selectedOptionCard : ""
-                  }`}
-                  onClick={() => setSelectedOption(option)}
-                >
-                  <div
-                    className={`${styles.optionContent} ${
-                      isTwoOption ? styles.optionContentCenter : ""
+              <div
+                className={`${styles.optionsList} ${
+                  isTwoOption ? styles.optionsListTwo : ""
+                }`}
+              >
+                {currentQuestion.options.map((option) => (
+                  <Card
+                    key={option}
+                    className={`${styles.optionCard} ${
+                      selectedOption === option ? styles.selectedOptionCard : ""
                     }`}
+                    onClick={() => setSelectedOption(option)}
                   >
-                    {!isTwoOption && (
-                      <Radio value={option} color="red" size="md" />
-                    )}
-                    <Text
-                      className={`${styles.optionText} ${
-                        isTwoOption ? styles.optionTextCenter : ""
+                    <div
+                      className={`${styles.optionContent} ${
+                        isTwoOption ? styles.optionContentCenter : ""
                       }`}
                     >
-                      {option}
-                    </Text>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </Radio.Group>
-        </Card>
+                      {!isTwoOption && (
+                        <Radio value={option} color="red" size="md" />
+                      )}
+                      <Text
+                        className={`${styles.optionText} ${
+                          isTwoOption ? styles.optionTextCenter : ""
+                        }`}
+                      >
+                        {option}
+                      </Text>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </Radio.Group>
+          </Card>
+        )}
 
         {/* Next button */}
         <Button
           size="lg"
-          disabled={!selectedOption}
+          disabled={showJobInput ? !jobDescription.trim() : !selectedOption}
           onClick={handleNext}
           className={styles.nextButton}
         >
-          {currentQuestionIndex === QUIZ_QUESTIONS.length - 1
-            ? "Submit"
+          {showJobInput
+            ? "Continue to Payment"
+            : currentQuestionIndex === QUIZ_QUESTIONS.length - 1
+            ? "Next"
             : "Next"}
         </Button>
       </Container>

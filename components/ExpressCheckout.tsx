@@ -46,11 +46,14 @@ export default function ExpressCheckout({
     setIsLoading(true);
 
     try {
+      console.log("Express checkout event:", event); // Debug log
+
       // Create payment intent
       const { client_secret } = await createPaymentIntent(amount, userId);
 
-      // Confirm payment with the payment method from the event
+      // Use the standard confirmPayment method with the payment method from the event
       const { error: confirmError } = await stripe.confirmPayment({
+        elements,
         clientSecret: client_secret,
         confirmParams: {
           return_url: `${window.location.origin}/payment-success`,
@@ -62,7 +65,8 @@ export default function ExpressCheckout({
         throw new Error(confirmError.message);
       }
 
-      // Payment succeeded - store verification and redirect
+      // If we get here, payment was successful
+      // Store verification and redirect
       sessionStorage.setItem("payment_verified", "true");
 
       if (onPaymentSuccess) {

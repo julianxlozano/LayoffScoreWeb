@@ -78,10 +78,10 @@ export default function UnlockScorePage() {
       icon: <IconTrendingUp size={20} />,
       text: "Custom action plan",
     },
-    {
-      icon: <IconCheck size={20} />,
-      text: "Weekly progress tracking",
-    },
+    // {
+    //   icon: <IconCheck size={20} />,
+    //   text: "Weekly progress tracking",
+    // },
   ];
 
   // Stripe Elements options
@@ -201,14 +201,13 @@ export default function UnlockScorePage() {
               </Stack>
             </Stack>
           </Card>
-
-          {/* Social proof */}
+          {/* 
           <div className={styles.socialProof}>
             <Text size="sm" className={styles.socialProofText}>
               Join <strong>12,847+</strong> professionals who've secured their
               careers
             </Text>
-          </div>
+          </div> */}
         </div>
       </Container>
     </div>

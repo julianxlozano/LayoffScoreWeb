@@ -44,6 +44,50 @@
   animation-fill-mode: backwards;
 }
 
+.analysisCard {
+  width: 100%;
+  max-width: 600px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  animation: fadeIn 0.8s ease-out;
+  animation-delay: 0.3s;
+  animation-fill-mode: backwards;
+}
+
+.analysisReport {
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.8;
+  font-size: 15px;
+  white-space: pre-wrap;
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0.6;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.loadingDots {
+  display: inline-block;
+  animation: loadingDots 1.4s infinite;
+}
+
+@keyframes loadingDots {
+  0%,
+  60%,
+  100% {
+    opacity: 0.3;
+  }
+  30% {
+    opacity: 1;
+  }
+}
+
 .tipsSection {
   width: 100%;
   max-width: 600px;
