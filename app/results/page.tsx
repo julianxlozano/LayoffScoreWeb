@@ -429,36 +429,15 @@ export default function ResultsPage() {
       }}
     >
       <Container size="md" className={styles.container}>
-        {/* Score Donut with Download Button */}
-        <div style={{ position: "relative" }}>
-          <Center className={styles.scoreContainer}>
-            <ScoreDonut
-              score={result.score}
-              riskLevel={result.risk_level}
-              startColor={startColor}
-              endColor={endColor}
-            />
-          </Center>
-
-          {/* Download PDF Button - positioned in top right */}
-          <Button
-            variant="subtle"
-            size="md"
-            leftSection={<IconDownload size={20} />}
-            onClick={handleDownloadPDF}
-            loading={downloadingPDF}
-            style={{
-              position: "absolute",
-              top: 0,
-              right: 0,
-              backgroundColor: "rgba(255, 255, 255, 0.1)",
-              border: "1px solid rgba(255, 255, 255, 0.2)",
-              color: "white",
-            }}
-          >
-            Download Report
-          </Button>
-        </div>
+        {/* Score Donut */}
+        <Center className={styles.scoreContainer}>
+          <ScoreDonut
+            score={result.score}
+            riskLevel={result.risk_level}
+            startColor={startColor}
+            endColor={endColor}
+          />
+        </Center>
 
         {/* Message */}
         <Text className={styles.message}>{result.message}</Text>
@@ -742,25 +721,69 @@ export default function ResultsPage() {
           </Stack>
         </div>
 
+        {/* Download Report Section */}
+        <Card
+          className={styles.analysisCard}
+          style={{ marginBottom: "2rem", textAlign: "center" }}
+        >
+          <Stack gap="md" align="center">
+            <Text size="lg" fw={600} color="white">
+              Save Your Analysis
+            </Text>
+            <Text size="sm" color="rgba(255, 255, 255, 0.7)" ta="center">
+              Download a comprehensive PDF report with your risk score, AI
+              analysis, and personalized action plan.
+            </Text>
+            <Button
+              size="lg"
+              leftSection={<IconDownload size={24} />}
+              onClick={handleDownloadPDF}
+              loading={downloadingPDF}
+              style={{
+                backgroundColor: "#ff6b6b",
+                border: "none",
+                color: "white",
+                padding: "12px 32px",
+              }}
+            >
+              {downloadingPDF
+                ? "Generating Report..."
+                : "Download Full Report (PDF)"}
+            </Button>
+          </Stack>
+        </Card>
+
         {/* Action Buttons */}
         <Stack gap="md" className={styles.buttonContainer}>
           <Button
             size="lg"
             className={styles.primaryButton}
-            onClick={handleDownloadPDF}
-            loading={downloadingPDF}
-            leftSection={<IconDownload size={24} />}
+            onClick={() => router.push("/")}
           >
-            Download Full Report (PDF)
+            Take Quiz Again
           </Button>
 
           <Button
             size="lg"
             variant="outline"
             className={styles.outlineButton}
-            onClick={() => router.push("/")}
+            onClick={() => {
+              // Share functionality could be added here
+              if (navigator.share) {
+                navigator.share({
+                  title: "My LayoffScore AI Risk Assessment",
+                  text: `I scored ${result.score}/100 on the LayoffScore AI risk assessment. Check out your own risk level!`,
+                  url: window.location.origin,
+                });
+              } else {
+                // Fallback for browsers that don't support Web Share API
+                navigator.clipboard.writeText(
+                  `I scored ${result.score}/100 on the LayoffScore AI risk assessment. Check out your own risk level at ${window.location.origin}`
+                );
+              }
+            }}
           >
-            Take Quiz Again
+            Share Results
           </Button>
         </Stack>
       </Container>
