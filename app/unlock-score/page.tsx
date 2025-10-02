@@ -40,9 +40,11 @@ export default function UnlockScorePage() {
   }, []);
 
   // Mock payment bypass (commented out for production)
-  // const handleMockPay = () => {
-  //   router.push("/results");
-  // };
+  const handleMockPay = () => {
+    // Set payment verification flag so results page doesn't redirect back
+    sessionStorage.setItem("payment_verified", "true");
+    router.push("/results");
+  };
 
   const handleStripeCheckout = async () => {
     setLoading(true);
@@ -177,7 +179,7 @@ export default function UnlockScorePage() {
               )}
 
               {/* Mock Payment Button - COMMENTED OUT FOR PRODUCTION */}
-              {/* <Button
+              <Button
                 size="lg"
                 variant="outline"
                 onClick={handleMockPay}
@@ -185,7 +187,7 @@ export default function UnlockScorePage() {
                 style={{ marginTop: "8px" }}
               >
                 Skip Payment (Dev Only)
-              </Button> */}
+              </Button>
 
               {/* Trust indicators */}
               <Stack gap="xs" align="center">
