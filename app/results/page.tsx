@@ -533,7 +533,7 @@ export default function ResultsPage() {
     );
   }
 
-  if (!result && !loading) {
+  if (!result) {
     return (
       <Center className={styles.loadingContainer}>
         <Stack align="center" gap="lg">
@@ -560,6 +560,7 @@ export default function ResultsPage() {
     );
   }
 
+  // Now TypeScript knows result is not null
   const [startColor, endColor] = getRiskColor(result.risk_level);
   const [bgStart, bgEnd] = getScreenGradient(result.risk_level);
   const cardBg = hexToRgba(endColor, 0.1);
