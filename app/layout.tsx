@@ -1,15 +1,11 @@
-import type { Metadata } from "next";
+"use client";
+
+import { useEffect } from "react";
 import { MantineProvider, createTheme } from "@mantine/core";
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import "../styles/globals.css";
 import Header from "@/components/Header";
-
-export const metadata: Metadata = {
-  title: "LayoffScore - Secure Your Future Against AI",
-  description:
-    "Gain peace of mind in the age of automation. Assess your job's AI risk and future-proof your career.",
-};
 
 const theme = createTheme({
   primaryColor: "red",
@@ -35,6 +31,17 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // Force HTTPS redirect
+  useEffect(() => {
+    if (
+      typeof window !== "undefined" &&
+      window.location.protocol === "http:" &&
+      window.location.hostname !== "localhost"
+    ) {
+      window.location.href = window.location.href.replace("http:", "https:");
+    }
+  }, []);
+
   return (
     <html lang="en">
       <body>
