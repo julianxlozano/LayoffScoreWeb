@@ -59,7 +59,8 @@ const SCORE_OVERRIDE: number | null = null;
 
 export default function ResultsPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(false); // No full-page loading state
+  const [loading, setLoading] = useState(true); // Initial loading state
+  const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<QuizResult | null>(null);
   const [quickAnalysis, setQuickAnalysis] = useState<QuickAnalysis | null>(
     null
@@ -221,6 +222,8 @@ export default function ResultsPage() {
       // Get answers from sessionStorage
       const answersStr = sessionStorage.getItem("quizAnswers");
       if (!answersStr) {
+        console.error("No quiz answers found in sessionStorage");
+        setLoading(false);
         router.push("/");
         return;
       }
@@ -234,6 +237,7 @@ export default function ResultsPage() {
 
         const scoreResult = await calculateQuizScore(answers, newUserId);
         setResult(scoreResult);
+        setLoading(false); // Score loaded, hide loading screen
 
         // ALWAYS generate quick assessment (even before payment for teaser)
         const jobDescription = sessionStorage.getItem("jobDescription");
@@ -378,9 +382,11 @@ export default function ResultsPage() {
             setLoadingAI(false);
           }
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error calculating score:", error);
+        setError(error?.message || "Failed to calculate score");
         setLoading(false);
+        // Don't redirect on error - let user see what happened
       }
     };
 
@@ -527,10 +533,29 @@ export default function ResultsPage() {
     );
   }
 
-  if (!result) {
+  if (!result && !loading) {
     return (
       <Center className={styles.loadingContainer}>
-        <Text>Error calculating score</Text>
+        <Stack align="center" gap="lg">
+          <Text size="xl" color="red">
+            Unable to Load Results
+          </Text>
+          <Text
+            size="sm"
+            color="dimmed"
+            ta="center"
+            style={{ maxWidth: "400px" }}
+          >
+            {error || "No quiz data found. Please take the quiz again."}
+          </Text>
+          <Button
+            size="lg"
+            onClick={() => router.push("/")}
+            style={{ backgroundColor: "#ff6b6b" }}
+          >
+            Return to Home
+          </Button>
+        </Stack>
       </Center>
     );
   }
