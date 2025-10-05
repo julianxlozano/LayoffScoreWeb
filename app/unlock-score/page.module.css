@@ -4,7 +4,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px 0;
+  padding: 20px 0;
 }
 
 .container {
@@ -19,7 +19,7 @@
 
 .header {
   text-align: center;
-  margin-bottom: 40px;
+  margin-bottom: 20px;
 }
 
 .badge {
@@ -28,19 +28,19 @@
 }
 
 .title {
-  font-size: clamp(32px, 4vw, 42px);
+  font-size: clamp(28px, 4vw, 36px);
   font-weight: bold;
   color: #ffffff;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   line-height: 1.2;
 }
 
 .subtitle {
-  font-size: 18px;
+  font-size: 16px;
   color: #b0b0b0;
   max-width: 400px;
   margin: 0 auto;
-  line-height: 1.5;
+  line-height: 1.4;
 }
 
 .pricingCard {
@@ -51,7 +51,7 @@
   );
   border: 2px solid rgba(255, 107, 107, 0.3);
   border-radius: 24px;
-  padding: 40px 32px;
+  padding: 24px 20px;
   width: 100%;
   max-width: 420px;
   backdrop-filter: blur(10px);
@@ -88,7 +88,7 @@
 
 .priceSection {
   text-align: center;
-  padding-bottom: 24px;
+  padding-bottom: 16px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   position: relative;
 }

@@ -4,7 +4,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px 0;
+  padding: 20px 0;
 }
 
 .container {
@@ -19,27 +19,27 @@
 }
 
 .iconContainer {
-  margin-bottom: 48px;
+  margin-bottom: 24px;
 }
 
 .title {
-  font-size: clamp(36px, 5vw, 48px);
+  font-size: clamp(32px, 5vw, 44px);
   font-weight: bold;
   color: #ffffff;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   line-height: 1.2;
 }
 
 .subtitle {
-  font-size: 18px;
+  font-size: 16px;
   color: #b0b0b0;
-  margin-bottom: 48px;
-  line-height: 1.6;
+  margin-bottom: 24px;
+  line-height: 1.5;
   max-width: 400px;
 }
 
 .pageIndicator {
-  margin-bottom: 48px;
+  margin-bottom: 24px;
   justify-content: center;
 }
 

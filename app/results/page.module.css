@@ -1,6 +1,6 @@
 .gradient {
   min-height: calc(100vh - 64px);
-  padding: 40px 0;
+  padding: 20px 0;
   transition: background 0.5s ease;
 }
 
@@ -16,7 +16,7 @@
 }
 
 .scoreContainer {
-  margin: 32px 0;
+  margin: 16px 0 24px;
   animation: fadeIn 0.6s ease-out;
 }
 
@@ -32,12 +32,12 @@
 }
 
 .message {
-  font-size: 20px;
+  font-size: 18px;
   color: #ffffff;
   text-align: center;
-  margin-bottom: 48px;
+  margin-bottom: 24px;
   padding: 0 20px;
-  line-height: 1.6;
+  line-height: 1.5;
   max-width: 600px;
   animation: fadeIn 0.8s ease-out;
   animation-delay: 0.2s;

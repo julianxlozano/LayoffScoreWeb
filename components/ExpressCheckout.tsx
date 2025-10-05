@@ -27,7 +27,7 @@ interface ExpressCheckoutProps {
 }
 
 export default function ExpressCheckout({
-  amount = 1900,
+  amount = 999,
   userId,
   onPaymentSuccess,
   onPaymentError,
@@ -88,11 +88,11 @@ export default function ExpressCheckout({
 
   // Create payment method order based on device type
   const getPaymentMethodOrder = () => {
-    const baseOrder = ["googlePay", "link", "applePay", "amazonPay"];
+    const baseOrder = ["googlePay", "link", "applePay"];
 
     // Add Cash App Pay for mobile users
     if (isMobile()) {
-      return ["googlePay", "link", "applePay", "cashapp", "amazonPay"];
+      return ["googlePay", "link", "applePay", "cashapp"];
     }
 
     return baseOrder;
@@ -118,6 +118,7 @@ export default function ExpressCheckout({
         window.location.hostname === "localhost"
           ? ("never" as const)
           : ("always" as const),
+      amazonPay: "never" as const, // Disable Amazon Pay
     },
     paymentMethodOrder: getPaymentMethodOrder(),
   };

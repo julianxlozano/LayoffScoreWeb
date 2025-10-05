@@ -13,6 +13,8 @@ import {
   Center,
   ActionIcon,
   Skeleton,
+  Divider,
+  Badge,
 } from "@mantine/core";
 import {
   IconBrain,
@@ -28,6 +30,9 @@ import {
   IconChartBar,
   IconAlertTriangle,
   IconDownload,
+  IconLock,
+  IconCreditCard,
+  IconStar,
 } from "@tabler/icons-react";
 import ScoreDonut from "@/components/ScoreDonut";
 import {
@@ -44,6 +49,9 @@ import {
 } from "@/utils/api";
 import { getRiskColor, getScreenGradient, hexToRgba } from "@/utils/colors";
 import { generatePDF } from "@/utils/pdfGenerator";
+import { Elements } from "@stripe/react-stripe-js";
+import { stripePromise } from "@/utils/payment";
+import ExpressCheckout from "@/components/ExpressCheckout";
 import styles from "./page.module.css";
 
 // Set to a number (e.g., 20, 50, 65, 90) to preview states; null uses real backend/local calc
@@ -51,19 +59,21 @@ const SCORE_OVERRIDE: number | null = null;
 
 export default function ResultsPage() {
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false); // No full-page loading state
   const [result, setResult] = useState<QuizResult | null>(null);
   const [quickAnalysis, setQuickAnalysis] = useState<QuickAnalysis | null>(
     null
   );
   const [aiAnalysis, setAiAnalysis] = useState<AIAnalysis | null>(null);
   const [userId, setUserId] = useState<number | null>(null);
-  const [quickReportExpanded, setQuickReportExpanded] = useState(false);
+  const [quickReportExpanded, setQuickReportExpanded] = useState(true); // Expanded by default
   const [fullReportExpanded, setFullReportExpanded] = useState(false);
   const [loadingQuick, setLoadingQuick] = useState(false);
   const [loadingAI, setLoadingAI] = useState(false);
   const [aiProgress, setAiProgress] = useState<string>("");
   const [downloadingPDF, setDownloadingPDF] = useState(false);
+  const [isPaid, setIsPaid] = useState(false);
+  const [showPayment, setShowPayment] = useState(false);
 
   // Function to render text with markdown-style formatting
   const renderFormattedText = (text: string) => {
@@ -193,13 +203,13 @@ export default function ResultsPage() {
   useEffect(() => {
     const loadResults = async () => {
       // Check for payment verification (skip in dev mode with SCORE_OVERRIDE)
-      if (SCORE_OVERRIDE === null) {
-        const paymentVerified = sessionStorage.getItem("payment_verified");
-        if (paymentVerified !== "true") {
-          // No payment verification, redirect to unlock score page
-          router.push("/unlock-score");
-          return;
-        }
+      const paymentVerified = sessionStorage.getItem("payment_verified");
+      const hasPaid = SCORE_OVERRIDE !== null || paymentVerified === "true";
+
+      setIsPaid(hasPaid);
+      if (!hasPaid) {
+        setShowPayment(true);
+        // Don't return - we still want to show the score
       }
 
       if (SCORE_OVERRIDE !== null) {
@@ -224,12 +234,10 @@ export default function ResultsPage() {
 
         const scoreResult = await calculateQuizScore(answers, newUserId);
         setResult(scoreResult);
-        setLoading(false); // Show score immediately
 
-        // Get job description and fetch AI analysis
+        // ALWAYS generate quick assessment (even before payment for teaser)
         const jobDescription = sessionStorage.getItem("jobDescription");
         if (jobDescription && scoreResult) {
-          // First, get quick analysis
           setLoadingQuick(true);
           try {
             const quick = await generateQuickAnalysis(
@@ -243,7 +251,15 @@ export default function ResultsPage() {
           } finally {
             setLoadingQuick(false);
           }
+        }
 
+        // Only fetch full AI analysis if user has paid
+        if (!hasPaid) {
+          return; // Stop here if not paid, show payment UI
+        }
+
+        // User has paid - proceed with full AI analysis
+        if (jobDescription && scoreResult) {
           // Then start full analysis with modular approach
           setLoadingAI(true);
           setAiProgress("Generating search queries");
@@ -371,6 +387,110 @@ export default function ResultsPage() {
     loadResults();
   }, [router]);
 
+  const handlePaymentSuccess = async () => {
+    // Mark as paid and trigger AI analysis
+    sessionStorage.setItem("payment_verified", "true");
+    setIsPaid(true);
+    setShowPayment(false);
+
+    // Trigger AI analysis
+    const jobDescription = sessionStorage.getItem("jobDescription");
+    if (jobDescription && result) {
+      // First, get quick analysis
+      setLoadingQuick(true);
+      try {
+        const quick = await generateQuickAnalysis(
+          jobDescription,
+          result.score,
+          result.risk_level
+        );
+        setQuickAnalysis(quick);
+      } catch (error) {
+        console.error("Error generating quick analysis:", error);
+      } finally {
+        setLoadingQuick(false);
+      }
+
+      // Then start full analysis
+      await startFullAnalysis(jobDescription, result);
+    }
+  };
+
+  const startFullAnalysis = async (
+    jobDescription: string,
+    scoreResult: QuizResult
+  ) => {
+    setLoadingAI(true);
+    setAiProgress("Generating search queries");
+
+    try {
+      const queriesResult = await generateSearchQueries(jobDescription);
+      if (!queriesResult.success || !queriesResult.queries) {
+        console.error("Failed to generate search queries, using defaults");
+        queriesResult.queries = {
+          trends: `AI automation trends ${jobDescription} ${new Date().getFullYear()}`,
+          tools: `AI tools disrupting ${jobDescription}`,
+          benchmarks: `industry benchmarks ${jobDescription} future outlook`,
+        };
+      }
+
+      setAiProgress("Searching for industry trends");
+      const searchPromises = [
+        executeWebSearch(queriesResult.queries.trends, "trends"),
+        executeWebSearch(queriesResult.queries.tools, "tools"),
+        executeWebSearch(queriesResult.queries.benchmarks, "benchmarks"),
+      ];
+
+      const searchResults = await Promise.allSettled(searchPromises);
+      let completedSearches = 0;
+      const combinedResults: {
+        trends?: string;
+        tools?: string;
+        benchmarks?: string;
+      } = {};
+
+      searchResults.forEach((result, index) => {
+        if (
+          result.status === "fulfilled" &&
+          result.value.success &&
+          result.value.result
+        ) {
+          completedSearches++;
+          const searchType = ["trends", "tools", "benchmarks"][index];
+          combinedResults[searchType as keyof typeof combinedResults] =
+            result.value.result;
+
+          if (completedSearches === 1) {
+            setAiProgress("Found industry trends, searching for tools");
+          } else if (completedSearches === 2) {
+            setAiProgress("Found tools data, getting benchmarks");
+          }
+        }
+      });
+
+      if (Object.keys(combinedResults).length === 0) {
+        throw new Error("All searches failed");
+      }
+
+      setAiProgress(
+        `Analyzing ${Object.keys(combinedResults).length} search results`
+      );
+      const analysis = await synthesizeAnalysis(
+        jobDescription,
+        scoreResult.score,
+        scoreResult.risk_level,
+        combinedResults
+      );
+
+      setAiAnalysis(analysis);
+      setAiProgress("");
+    } catch (error) {
+      console.error("Error generating AI analysis:", error);
+    } finally {
+      setLoadingAI(false);
+    }
+  };
+
   const handleDownloadPDF = async () => {
     if (!result) return;
 
@@ -440,91 +560,208 @@ export default function ResultsPage() {
         </Center>
 
         {/* Message */}
-        <Text className={styles.message}>{result.message}</Text>
+        {/* <Text className={styles.message}>{result.message}</Text> */}
 
-        {/* Quick Analysis Card */}
-        <Card
-          className={styles.analysisCard}
-          style={{ marginTop: "2rem", marginBottom: "1rem" }}
-        >
-          <Stack gap="md">
-            <Text size="lg" fw={600} color="white">
-              Quick Risk Assessment
-            </Text>
+        {/* Content wrapper with selective blur on bottom 75% */}
+        <div style={{ position: "relative" }}>
+          {/* Blur overlay - no black background, just blur with smooth fade */}
+          {showPayment && (
+            <div
+              style={{
+                position: "absolute",
+                top: "10%",
+                left: "-20px",
+                right: "-20px",
+                bottom: "-20px",
+                backdropFilter: "blur(10px)",
+                WebkitBackdropFilter: "blur(10px)",
+                maskImage:
+                  "linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.3) 5%, rgba(255,255,255,1) 10%)",
+                WebkitMaskImage:
+                  "linear-gradient(to bottom, transparent 0%, rgba(255,255,255,0.3) 5%, rgba(255,255,255,1) 10%)",
+                zIndex: 10,
+                pointerEvents: "none",
+              }}
+            />
+          )}
 
-            {loadingQuick ? (
-              <Stack gap="sm">
-                <Skeleton height={20} radius="sm" />
-                <Skeleton height={20} radius="sm" />
-                <Skeleton height={20} width="70%" radius="sm" />
-              </Stack>
-            ) : quickAnalysis ? (
-              <div style={{ position: "relative" }}>
-                <Text
-                  className={styles.analysisReport}
-                  style={{
-                    maxHeight: quickReportExpanded ? "none" : "120px",
-                    overflow: "hidden",
-                    transition: "max-height 0.3s ease",
-                  }}
-                >
-                  {quickAnalysis.quick_report}
-                </Text>
+          {/* Risk Summary */}
+          <Card
+            className={styles.analysisCard}
+            style={{
+              marginTop: "1.5rem",
+              marginBottom: "1rem",
+            }}
+          >
+            <Stack gap="md">
+              <Text size="lg" fw={600} color="white">
+                Risk Summary
+              </Text>
 
-                {quickAnalysis.quick_report.length > 300 && (
-                  <Button
-                    variant="subtle"
-                    size="sm"
-                    onClick={() => setQuickReportExpanded(!quickReportExpanded)}
-                    rightSection={
-                      quickReportExpanded ? (
-                        <IconChevronUp size={16} />
-                      ) : (
-                        <IconChevronDown size={16} />
-                      )
-                    }
-                    style={{ marginTop: "0.5rem" }}
-                  >
-                    {quickReportExpanded ? "Show Less" : "Read More"}
-                  </Button>
-                )}
-              </div>
-            ) : null}
-          </Stack>
-        </Card>
-
-        {/* Full AI Analysis Card with Web Search */}
-        <Card className={styles.analysisCard} style={{ marginBottom: "2rem" }}>
-          <Stack gap="md">
-            <Text size="lg" fw={600} color="white">
-              Comprehensive AI Analysis
-            </Text>
-
-            {loadingAI ? (
-              <>
+              {loadingQuick ? (
                 <Stack gap="sm">
                   <Skeleton height={20} radius="sm" />
                   <Skeleton height={20} radius="sm" />
-                  <Skeleton height={20} width="80%" radius="sm" />
+                  <Skeleton height={20} width="70%" radius="sm" />
                 </Stack>
-                {aiProgress && (
-                  <Group gap="xs" style={{ marginTop: "0.5rem" }}>
-                    <Loader size="xs" color="red" />
+              ) : quickAnalysis ? (
+                <Text className={styles.analysisReport}>
+                  {quickAnalysis.quick_report}
+                </Text>
+              ) : (
+                <Text size="sm" color="dimmed">
+                  Generating summary...
+                </Text>
+              )}
+            </Stack>
+          </Card>
+
+          {/* Payment Card - Positioned at 15% mark, overlays blurred content */}
+          {showPayment && (
+            <div
+              style={{
+                position: "absolute",
+                top: "15%",
+                left: "50%",
+                transform: "translateX(-50%)",
+                zIndex: 100,
+                width: "100%",
+                maxWidth: "500px",
+                padding: "0 20px",
+              }}
+            >
+              <Card
+                style={{
+                  background: "rgba(26, 26, 26, 0.98)",
+                  border: "2px solid rgba(255, 107, 107, 0.5)",
+                  boxShadow: "0 8px 32px rgba(0, 0, 0, 0.5)",
+                  backdropFilter: "blur(10px)",
+                }}
+              >
+                <Stack gap="md">
+                  <Badge
+                    size="lg"
+                    color="red"
+                    variant="light"
+                    style={{ alignSelf: "center" }}
+                  >
+                    Limited Time: 74% OFF
+                  </Badge>
+
+                  <Text size="xl" fw={700} color="white" ta="center">
+                    Unlock Full Report
+                  </Text>
+
+                  <Text size="sm" color="rgba(255, 255, 255, 0.8)" ta="center">
+                    🔒 See complete analysis + AI-powered industry insights +
+                    personalized action plan
+                  </Text>
+
+                  <div
+                    style={{
+                      textAlign: "center",
+                      padding: "12px 0",
+                      borderTop: "1px solid rgba(255, 255, 255, 0.1)",
+                      borderBottom: "1px solid rgba(255, 255, 255, 0.1)",
+                    }}
+                  >
                     <Text
-                      size="sm"
+                      size="xs"
                       color="dimmed"
-                      style={{ fontStyle: "italic" }}
+                      style={{ textDecoration: "line-through" }}
                     >
-                      {aiProgress}
-                      <span className={styles.loadingDots}>...</span>
+                      $39
                     </Text>
-                  </Group>
-                )}
-              </>
-            ) : aiAnalysis ? (
-              <Stack gap="lg">
-                {/* Statistics Section - Moved to top */}
-                {aiAnalysis.statistics && aiAnalysis.statistics.length > 0 && (
+                    <Text size="48px" fw={700} color="white">
+                      $9.99
+                    </Text>
+                    <Text size="sm" color="dimmed">
+                      one-time
+                    </Text>
+                  </div>
+
+                  <Elements
+                    stripe={stripePromise}
+                    options={{
+                      mode: "payment",
+                      amount: 999,
+                      currency: "usd",
+                      appearance: {
+                        theme: "night",
+                        variables: { colorPrimary: "#ff6b6b" },
+                      },
+                    }}
+                  >
+                    <ExpressCheckout
+                      amount={999}
+                      userId={userId?.toString()}
+                      onPaymentSuccess={handlePaymentSuccess}
+                    />
+                  </Elements>
+
+                  <Divider label="Or pay with card" labelPosition="center" />
+
+                  <Button
+                    size="lg"
+                    fullWidth
+                    leftSection={<IconCreditCard size={24} />}
+                    style={{ backgroundColor: "#ff4444", border: "none" }}
+                    onClick={handlePaymentSuccess}
+                  >
+                    Pay with Card - $9.99
+                  </Button>
+
+                  <Button
+                    size="md"
+                    variant="outline"
+                    onClick={handlePaymentSuccess}
+                    fullWidth
+                    style={{
+                      marginTop: "8px",
+                      borderColor: "rgba(255, 255, 255, 0.3)",
+                      color: "rgba(255, 255, 255, 0.7)",
+                    }}
+                  >
+                    Skip Payment (Dev Only)
+                  </Button>
+
+                  <Text size="xs" color="dimmed" ta="center">
+                    🔒 Secure checkout • 30-day guarantee
+                  </Text>
+                </Stack>
+              </Card>
+            </div>
+          )}
+
+          {/* Full AI Analysis Card with Web Search */}
+          <Card
+            className={styles.analysisCard}
+            style={{ marginBottom: "2rem" }}
+          >
+            <Stack gap="md">
+              <Text size="lg" fw={600} color="white">
+                Comprehensive AI Analysis
+              </Text>
+
+              {/* Progress indicator - show when actively loading (not when locked) */}
+              {loadingAI && aiProgress && !showPayment && (
+                <Group gap="xs">
+                  <Loader size="xs" color="red" />
+                  <Text
+                    size="sm"
+                    color="dimmed"
+                    style={{ fontStyle: "italic" }}
+                  >
+                    {aiProgress}
+                    <span className={styles.loadingDots}>...</span>
+                  </Text>
+                </Group>
+              )}
+
+              {/* Show skeletons when locked OR when loading after payment */}
+              {!aiAnalysis ? (
+                <>
+                  {/* Statistics Skeleton */}
                   <div>
                     <Text
                       size="lg"
@@ -542,9 +779,9 @@ export default function ResultsPage() {
                       Industry Statistics
                     </Text>
                     <Group gap="sm">
-                      {aiAnalysis.statistics.map((stat, index) => (
+                      {[1, 2, 3].map((i) => (
                         <Card
-                          key={index}
+                          key={i}
                           style={{
                             flex: 1,
                             minWidth: "150px",
@@ -552,74 +789,70 @@ export default function ResultsPage() {
                             border: "1px solid rgba(100, 255, 100, 0.3)",
                           }}
                         >
-                          <Text size="xl" fw={700} color="white">
-                            {stat.value}
-                          </Text>
-                          <Text size="xs" fw={500} color="white">
-                            {stat.title}
-                          </Text>
-                          <Text
-                            size="xs"
-                            color="dimmed"
-                            style={{ marginTop: "0.25rem" }}
-                          >
-                            {stat.description}
-                          </Text>
+                          <Skeleton
+                            height={32}
+                            width="60%"
+                            radius="sm"
+                            style={{ marginBottom: "8px" }}
+                          />
+                          <Skeleton
+                            height={12}
+                            width="80%"
+                            radius="sm"
+                            style={{ marginBottom: "4px" }}
+                          />
+                          <Skeleton height={10} width="100%" radius="sm" />
                         </Card>
                       ))}
                     </Group>
                   </div>
-                )}
 
-                {/* Main report text with formatting */}
-                <div>{renderFormattedText(aiAnalysis.report)}</div>
+                  {/* Report Text Skeleton */}
+                  <Stack gap="sm">
+                    <Skeleton height={20} radius="sm" />
+                    <Skeleton height={20} radius="sm" />
+                    <Skeleton height={20} width="80%" radius="sm" />
+                  </Stack>
 
-                {/* Vulnerable Tasks Section */}
-                {aiAnalysis.vulnerable_tasks &&
-                  aiAnalysis.vulnerable_tasks.length > 0 && (
-                    <div>
-                      <Text
-                        size="lg"
-                        fw={600}
-                        color="white"
-                        style={{ marginBottom: "1rem" }}
-                      >
-                        <IconAlertTriangle
-                          size={20}
+                  {/* Vulnerable Tasks Skeleton */}
+                  <div>
+                    <Text
+                      size="lg"
+                      fw={600}
+                      color="white"
+                      style={{ marginBottom: "1rem" }}
+                    >
+                      <IconAlertTriangle
+                        size={20}
+                        style={{
+                          verticalAlign: "middle",
+                          marginRight: "0.5rem",
+                        }}
+                      />
+                      Vulnerable Tasks
+                    </Text>
+                    <Stack gap="sm">
+                      {[1, 2, 3].map((i) => (
+                        <Card
+                          key={i}
                           style={{
-                            verticalAlign: "middle",
-                            marginRight: "0.5rem",
+                            background: "rgba(255, 100, 100, 0.1)",
+                            border: "1px solid rgba(255, 100, 100, 0.3)",
                           }}
-                        />
-                        Vulnerable Tasks
-                      </Text>
-                      <Stack gap="sm">
-                        {aiAnalysis.vulnerable_tasks.map((task, index) => (
-                          <Card
-                            key={index}
-                            style={{
-                              background: "rgba(255, 100, 100, 0.1)",
-                              border: "1px solid rgba(255, 100, 100, 0.3)",
-                            }}
-                          >
-                            <Text fw={500} color="white" size="sm">
-                              {task.title}
-                            </Text>
-                            <Text
-                              size="xs"
-                              color="dimmed"
-                              style={{ marginTop: "0.25rem" }}
-                            >
-                              {task.description}
-                            </Text>
-                          </Card>
-                        ))}
-                      </Stack>
-                    </div>
-                  )}
+                        >
+                          <Skeleton
+                            height={14}
+                            width="60%"
+                            radius="sm"
+                            style={{ marginBottom: "6px" }}
+                          />
+                          <Skeleton height={12} width="90%" radius="sm" />
+                        </Card>
+                      ))}
+                    </Stack>
+                  </div>
 
-                {/* AI Tools Section */}
-                {aiAnalysis.ai_tools && aiAnalysis.ai_tools.length > 0 && (
+                  {/* AI Tools Skeleton */}
                   <div>
                     <Text
                       size="lg"
@@ -637,155 +870,296 @@ export default function ResultsPage() {
                       AI Tools Impacting Your Role
                     </Text>
                     <Stack gap="sm">
-                      {aiAnalysis.ai_tools.map((tool, index) => (
+                      {[1, 2, 3].map((i) => (
                         <Card
-                          key={index}
+                          key={i}
                           style={{
                             background: "rgba(100, 100, 255, 0.1)",
                             border: "1px solid rgba(100, 100, 255, 0.3)",
                           }}
                         >
-                          <Text fw={500} color="white" size="sm">
-                            {tool.name}
-                          </Text>
-                          <Text
-                            size="xs"
-                            color="dimmed"
-                            style={{ marginTop: "0.25rem" }}
-                          >
-                            {tool.description}
-                          </Text>
+                          <Skeleton
+                            height={14}
+                            width="50%"
+                            radius="sm"
+                            style={{ marginBottom: "6px" }}
+                          />
+                          <Skeleton height={12} width="85%" radius="sm" />
                         </Card>
                       ))}
                     </Stack>
                   </div>
-                )}
-              </Stack>
-            ) : (
-              <Text size="sm" color="dimmed" style={{ fontStyle: "italic" }}>
-                Analysis will appear here once complete...
+                </>
+              ) : aiAnalysis ? (
+                <Stack gap="lg">
+                  {/* Statistics Section - Moved to top */}
+                  {aiAnalysis.statistics &&
+                    aiAnalysis.statistics.length > 0 && (
+                      <div>
+                        <Text
+                          size="lg"
+                          fw={600}
+                          color="white"
+                          style={{ marginBottom: "1rem" }}
+                        >
+                          <IconChartBar
+                            size={20}
+                            style={{
+                              verticalAlign: "middle",
+                              marginRight: "0.5rem",
+                            }}
+                          />
+                          Industry Statistics
+                        </Text>
+                        <Group gap="sm">
+                          {aiAnalysis.statistics.map((stat, index) => (
+                            <Card
+                              key={index}
+                              style={{
+                                flex: 1,
+                                minWidth: "150px",
+                                background: "rgba(100, 255, 100, 0.1)",
+                                border: "1px solid rgba(100, 255, 100, 0.3)",
+                              }}
+                            >
+                              <Text size="xl" fw={700} color="white">
+                                {stat.value}
+                              </Text>
+                              <Text size="xs" fw={500} color="white">
+                                {stat.title}
+                              </Text>
+                              <Text
+                                size="xs"
+                                color="dimmed"
+                                style={{ marginTop: "0.25rem" }}
+                              >
+                                {stat.description}
+                              </Text>
+                            </Card>
+                          ))}
+                        </Group>
+                      </div>
+                    )}
+
+                  {/* Main report text with formatting */}
+                  <div>{renderFormattedText(aiAnalysis.report)}</div>
+
+                  {/* Vulnerable Tasks Section */}
+                  {aiAnalysis.vulnerable_tasks &&
+                    aiAnalysis.vulnerable_tasks.length > 0 && (
+                      <div>
+                        <Text
+                          size="lg"
+                          fw={600}
+                          color="white"
+                          style={{ marginBottom: "1rem" }}
+                        >
+                          <IconAlertTriangle
+                            size={20}
+                            style={{
+                              verticalAlign: "middle",
+                              marginRight: "0.5rem",
+                            }}
+                          />
+                          Vulnerable Tasks
+                        </Text>
+                        <Stack gap="sm">
+                          {aiAnalysis.vulnerable_tasks.map((task, index) => (
+                            <Card
+                              key={index}
+                              style={{
+                                background: "rgba(255, 100, 100, 0.1)",
+                                border: "1px solid rgba(255, 100, 100, 0.3)",
+                              }}
+                            >
+                              <Text fw={500} color="white" size="sm">
+                                {task.title}
+                              </Text>
+                              <Text
+                                size="xs"
+                                color="dimmed"
+                                style={{ marginTop: "0.25rem" }}
+                              >
+                                {task.description}
+                              </Text>
+                            </Card>
+                          ))}
+                        </Stack>
+                      </div>
+                    )}
+
+                  {/* AI Tools Section */}
+                  {aiAnalysis.ai_tools && aiAnalysis.ai_tools.length > 0 && (
+                    <div>
+                      <Text
+                        size="lg"
+                        fw={600}
+                        color="white"
+                        style={{ marginBottom: "1rem" }}
+                      >
+                        <IconRobot
+                          size={20}
+                          style={{
+                            verticalAlign: "middle",
+                            marginRight: "0.5rem",
+                          }}
+                        />
+                        AI Tools Impacting Your Role
+                      </Text>
+                      <Stack gap="sm">
+                        {aiAnalysis.ai_tools.map((tool, index) => (
+                          <Card
+                            key={index}
+                            style={{
+                              background: "rgba(100, 100, 255, 0.1)",
+                              border: "1px solid rgba(100, 100, 255, 0.3)",
+                            }}
+                          >
+                            <Text fw={500} color="white" size="sm">
+                              {tool.name}
+                            </Text>
+                            <Text
+                              size="xs"
+                              color="dimmed"
+                              style={{ marginTop: "0.25rem" }}
+                            >
+                              {tool.description}
+                            </Text>
+                          </Card>
+                        ))}
+                      </Stack>
+                    </div>
+                  )}
+                </Stack>
+              ) : (
+                <Text size="sm" color="dimmed" style={{ fontStyle: "italic" }}>
+                  Analysis will appear here once complete...
+                </Text>
+              )}
+            </Stack>
+          </Card>
+
+          {/* Tips Section - Use AI tips if available, otherwise default tips */}
+          <div className={styles.tipsSection}>
+            <Text className={styles.tipsTitle}>
+              {aiAnalysis?.actionable_steps?.length
+                ? "Your Action Plan"
+                : "Free Tips to Reduce Risk"}
+            </Text>
+
+            <Stack gap="md">
+              {(aiAnalysis?.actionable_steps || result.tips).map(
+                (tip, index) => (
+                  <Card
+                    key={index}
+                    className={styles.tipCard}
+                    style={{
+                      backgroundColor: cardBg,
+                      borderColor: cardBorder,
+                    }}
+                  >
+                    <Group gap="md" align="flex-start">
+                      <div
+                        className={styles.tipIcon}
+                        style={{ backgroundColor: iconBg }}
+                      >
+                        {getIconComponent(tip.icon)}
+                      </div>
+                      <Stack gap="xs" style={{ flex: 1 }}>
+                        <Group justify="space-between" align="center">
+                          <Text className={styles.tipTitle}>{tip.title}</Text>
+                          {(tip as any).link && (
+                            <ActionIcon
+                              component="a"
+                              href={(tip as any).link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              variant="subtle"
+                              color="gray"
+                              size="sm"
+                            >
+                              <IconExternalLink size={16} />
+                            </ActionIcon>
+                          )}
+                        </Group>
+                        <Text className={styles.tipDescription}>
+                          {tip.description}
+                        </Text>
+                      </Stack>
+                    </Group>
+                  </Card>
+                )
+              )}
+            </Stack>
+          </div>
+
+          {/* Download Report Section */}
+          <Card
+            className={styles.analysisCard}
+            style={{ marginBottom: "2rem", textAlign: "center" }}
+          >
+            <Stack gap="md" align="center">
+              <Text size="lg" fw={600} color="white">
+                Save Your Analysis
               </Text>
-            )}
-          </Stack>
-        </Card>
-
-        {/* Tips Section - Use AI tips if available, otherwise default tips */}
-        <div className={styles.tipsSection}>
-          <Text className={styles.tipsTitle}>
-            {aiAnalysis?.actionable_steps?.length
-              ? "Your Action Plan"
-              : "Free Tips to Reduce Risk"}
-          </Text>
-
-          <Stack gap="md">
-            {(aiAnalysis?.actionable_steps || result.tips).map((tip, index) => (
-              <Card
-                key={index}
-                className={styles.tipCard}
+              <Text size="sm" color="rgba(255, 255, 255, 0.7)" ta="center">
+                Download a comprehensive PDF report with your risk score, AI
+                analysis, and personalized action plan.
+              </Text>
+              <Button
+                size="lg"
+                leftSection={<IconDownload size={24} />}
+                onClick={handleDownloadPDF}
+                loading={downloadingPDF}
                 style={{
-                  backgroundColor: cardBg,
-                  borderColor: cardBorder,
+                  backgroundColor: "#ff6b6b",
+                  border: "none",
+                  color: "white",
+                  padding: "12px 32px",
                 }}
               >
-                <Group gap="md" align="flex-start">
-                  <div
-                    className={styles.tipIcon}
-                    style={{ backgroundColor: iconBg }}
-                  >
-                    {getIconComponent(tip.icon)}
-                  </div>
-                  <Stack gap="xs" style={{ flex: 1 }}>
-                    <Group justify="space-between" align="center">
-                      <Text className={styles.tipTitle}>{tip.title}</Text>
-                      {(tip as any).link && (
-                        <ActionIcon
-                          component="a"
-                          href={(tip as any).link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          variant="subtle"
-                          color="gray"
-                          size="sm"
-                        >
-                          <IconExternalLink size={16} />
-                        </ActionIcon>
-                      )}
-                    </Group>
-                    <Text className={styles.tipDescription}>
-                      {tip.description}
-                    </Text>
-                  </Stack>
-                </Group>
-              </Card>
-            ))}
-          </Stack>
-        </div>
+                {downloadingPDF
+                  ? "Generating Report..."
+                  : "Download Full Report (PDF)"}
+              </Button>
+            </Stack>
+          </Card>
 
-        {/* Download Report Section */}
-        <Card
-          className={styles.analysisCard}
-          style={{ marginBottom: "2rem", textAlign: "center" }}
-        >
-          <Stack gap="md" align="center">
-            <Text size="lg" fw={600} color="white">
-              Save Your Analysis
-            </Text>
-            <Text size="sm" color="rgba(255, 255, 255, 0.7)" ta="center">
-              Download a comprehensive PDF report with your risk score, AI
-              analysis, and personalized action plan.
-            </Text>
+          {/* Action Buttons */}
+          <Stack gap="md" className={styles.buttonContainer}>
             <Button
               size="lg"
-              leftSection={<IconDownload size={24} />}
-              onClick={handleDownloadPDF}
-              loading={downloadingPDF}
-              style={{
-                backgroundColor: "#ff6b6b",
-                border: "none",
-                color: "white",
-                padding: "12px 32px",
+              className={styles.primaryButton}
+              onClick={() => router.push("/")}
+            >
+              Take Quiz Again
+            </Button>
+
+            <Button
+              size="lg"
+              variant="outline"
+              className={styles.outlineButton}
+              onClick={() => {
+                // Share functionality could be added here
+                if (navigator.share) {
+                  navigator.share({
+                    title: "My LayoffScore AI Risk Assessment",
+                    text: `I scored ${result.score}/100 on the LayoffScore AI risk assessment. Check out your own risk level!`,
+                    url: window.location.origin,
+                  });
+                } else {
+                  // Fallback for browsers that don't support Web Share API
+                  navigator.clipboard.writeText(
+                    `I scored ${result.score}/100 on the LayoffScore AI risk assessment. Check out your own risk level at ${window.location.origin}`
+                  );
+                }
               }}
             >
-              {downloadingPDF
-                ? "Generating Report..."
-                : "Download Full Report (PDF)"}
+              Share Results
             </Button>
           </Stack>
-        </Card>
-
-        {/* Action Buttons */}
-        <Stack gap="md" className={styles.buttonContainer}>
-          <Button
-            size="lg"
-            className={styles.primaryButton}
-            onClick={() => router.push("/")}
-          >
-            Take Quiz Again
-          </Button>
-
-          <Button
-            size="lg"
-            variant="outline"
-            className={styles.outlineButton}
-            onClick={() => {
-              // Share functionality could be added here
-              if (navigator.share) {
-                navigator.share({
-                  title: "My LayoffScore AI Risk Assessment",
-                  text: `I scored ${result.score}/100 on the LayoffScore AI risk assessment. Check out your own risk level!`,
-                  url: window.location.origin,
-                });
-              } else {
-                // Fallback for browsers that don't support Web Share API
-                navigator.clipboard.writeText(
-                  `I scored ${result.score}/100 on the LayoffScore AI risk assessment. Check out your own risk level at ${window.location.origin}`
-                );
-              }
-            }}
-          >
-            Share Results
-          </Button>
-        </Stack>
+        </div>
+        {/* End content wrapper with selective blur */}
       </Container>
     </div>
   );

@@ -85,8 +85,8 @@ export default function QuizPage() {
     sessionStorage.setItem("quizAnswers", JSON.stringify(booleanAnswers));
     sessionStorage.setItem("jobDescription", jobDescription);
 
-    // Navigate to unlock score page
-    router.push("/unlock-score");
+    // Navigate to results page (which now includes payment if not paid)
+    router.push("/results");
   };
 
   return (
