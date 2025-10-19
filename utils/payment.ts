@@ -27,7 +27,7 @@ export const createCheckoutSession = async (userId?: string) => {
 };
 
 export const createPaymentIntent = async (
-  amount: number = 999,
+  amount: number = 50,
   userId?: string
 ) => {
   try {

@@ -820,7 +820,7 @@ export default function ResultsPage() {
                       $39
                     </Text>
                     <Text size="48px" fw={700} color="white">
-                      $9.99
+                      $0.50
                     </Text>
                     <Text size="sm" color="dimmed">
                       one-time
@@ -831,7 +831,7 @@ export default function ResultsPage() {
                     stripe={stripePromise}
                     options={{
                       mode: "payment",
-                      amount: 999,
+                      amount: 50,
                       currency: "usd",
                       appearance: {
                         theme: "night",
@@ -840,7 +840,7 @@ export default function ResultsPage() {
                     }}
                   >
                     <ExpressCheckout
-                      amount={999}
+                      amount={50}
                       userId={userId?.toString()}
                       onPaymentSuccess={handlePaymentSuccess}
                     />
@@ -855,7 +855,7 @@ export default function ResultsPage() {
                     style={{ backgroundColor: "#ff4444", border: "none" }}
                     onClick={handlePaymentSuccess}
                   >
-                    Pay with Card - $9.99
+                    Pay with Card - $0.50
                   </Button>
 
                   {/* Dev bypass button - only show in development */}
