@@ -16,6 +16,7 @@ import {
   Divider,
   Badge,
 } from "@mantine/core";
+import { notifications } from "@mantine/notifications";
 import {
   IconBrain,
   IconUsers,
@@ -43,6 +44,8 @@ import {
   generateSearchQueries,
   executeWebSearch,
   synthesizeAnalysis,
+  getRegenerationCounts,
+  incrementRegenerationCount,
   QuizResult,
   QuickAnalysis,
   AIAnalysis,
@@ -75,6 +78,20 @@ export default function ResultsPage() {
   const [downloadingPDF, setDownloadingPDF] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
+  const [quickRegenCount, setQuickRegenCount] = useState(0);
+  const [fullRegenCount, setFullRegenCount] = useState(0);
+
+  // Load regeneration counts from backend when userId is available
+  useEffect(() => {
+    const loadCounts = async () => {
+      if (userId) {
+        const counts = await getRegenerationCounts(userId.toString());
+        setQuickRegenCount(counts.quick_count);
+        setFullRegenCount(counts.full_count);
+      }
+    };
+    loadCounts();
+  }, [userId]);
 
   // Function to render text with markdown-style formatting
   const renderFormattedText = (text: string) => {
@@ -424,7 +441,8 @@ export default function ResultsPage() {
 
   const startFullAnalysis = async (
     jobDescription: string,
-    scoreResult: QuizResult
+    scoreResult: QuizResult,
+    isRegeneration: boolean = false
   ) => {
     setLoadingAI(true);
     setAiProgress("Generating search queries");
@@ -485,16 +503,104 @@ export default function ResultsPage() {
         jobDescription,
         scoreResult.score,
         scoreResult.risk_level,
-        combinedResults
+        combinedResults,
+        isRegeneration // Pass regeneration flag to backend
       );
 
       setAiAnalysis(analysis);
       setAiProgress("");
-    } catch (error) {
+
+      // Update local count if this was a regeneration and successful
+      if (isRegeneration && analysis.success) {
+        setFullRegenCount((prev) => prev + 1);
+      }
+    } catch (error: any) {
+      // Check if it's a rate limit error
+      if (error.response?.status === 429) {
+        notifications.show({
+          title: "Rate Limit Exceeded",
+          message:
+            error.response?.data?.message ||
+            "Too many regenerations. Try again tomorrow.",
+          color: "red",
+          position: "top-center",
+        });
+      }
       console.error("Error generating AI analysis:", error);
+      // Don't increment count on failure
     } finally {
       setLoadingAI(false);
     }
+  };
+
+  const handleRegenerateQuick = async () => {
+    // Check if limit reached
+    if (quickRegenCount >= 3) {
+      notifications.show({
+        title: "Generation Limit Reached",
+        message:
+          "You have reached the maximum of 3 regenerations for the Quick Summary.",
+        color: "red",
+        position: "top-center",
+      });
+      return;
+    }
+
+    const jobDescription = sessionStorage.getItem("jobDescription");
+    if (!jobDescription || !result) return;
+
+    setLoadingQuick(true);
+    try {
+      const quick = await generateQuickAnalysis(
+        jobDescription,
+        result.score,
+        result.risk_level,
+        true // is_regeneration flag
+      );
+
+      setQuickAnalysis(quick);
+
+      // Update local count if successful (backend already incremented)
+      if (quick.success) {
+        setQuickRegenCount((prev) => prev + 1);
+      }
+    } catch (error: any) {
+      console.error("Error regenerating quick analysis:", error);
+
+      // Check if it's a rate limit error
+      if (error.response?.status === 429) {
+        notifications.show({
+          title: "Rate Limit Exceeded",
+          message:
+            error.response?.data?.message ||
+            "Too many regenerations. Try again tomorrow.",
+          color: "red",
+          position: "top-center",
+        });
+      }
+    } finally {
+      setLoadingQuick(false);
+    }
+  };
+
+  const handleRegenerateFull = async () => {
+    // Check if limit reached
+    if (fullRegenCount >= 3) {
+      notifications.show({
+        title: "Generation Limit Reached",
+        message:
+          "You have reached the maximum of 3 regenerations for the Comprehensive Analysis.",
+        color: "red",
+        position: "top-center",
+      });
+      return;
+    }
+
+    const jobDescription = sessionStorage.getItem("jobDescription");
+    if (!jobDescription || !result) return;
+
+    // Pass isRegeneration flag so count increments on success
+    await startFullAnalysis(jobDescription, result, true);
   };
 
   const handleDownloadPDF = async () => {
@@ -638,6 +744,21 @@ export default function ResultsPage() {
                 <Text size="sm" color="dimmed">
                   Generating summary...
                 </Text>
+              )}
+
+              {/* Regenerate button - always visible after payment */}
+              {!showPayment && (
+                <Button
+                  variant="subtle"
+                  size="sm"
+                  onClick={handleRegenerateQuick}
+                  loading={loadingQuick}
+                  disabled={quickRegenCount >= 3}
+                  style={{ marginTop: "1rem", alignSelf: "flex-start" }}
+                >
+                  🔄 Regenerate Summary{" "}
+                  {quickRegenCount < 3 && `(${3 - quickRegenCount} left)`}
+                </Button>
               )}
             </Stack>
           </Card>
@@ -1061,6 +1182,21 @@ export default function ResultsPage() {
                 <Text size="sm" color="dimmed" style={{ fontStyle: "italic" }}>
                   Analysis will appear here once complete...
                 </Text>
+              )}
+
+              {/* Regenerate button - always visible after payment */}
+              {!showPayment && (
+                <Button
+                  variant="subtle"
+                  size="sm"
+                  onClick={handleRegenerateFull}
+                  loading={loadingAI}
+                  disabled={fullRegenCount >= 3}
+                  style={{ marginTop: "1rem", alignSelf: "flex-start" }}
+                >
+                  🔄 Regenerate Comprehensive Analysis{" "}
+                  {fullRegenCount < 3 && `(${3 - fullRegenCount} left)`}
+                </Button>
               )}
             </Stack>
           </Card>

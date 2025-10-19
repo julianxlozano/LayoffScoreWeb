@@ -134,13 +134,15 @@ export const calculateScoreLocally = (answers: boolean[]): QuizResult => {
 export const generateQuickAnalysis = async (
   jobDescription: string,
   quizScore: number,
-  riskLevel: string
+  riskLevel: string,
+  isRegeneration: boolean = false
 ): Promise<QuickAnalysis> => {
   try {
     const response = await axios.post(`${API_BASE_URL}/ai/quick-analyze/`, {
       job_description: jobDescription,
       quiz_score: quizScore,
       risk_level: riskLevel,
+      is_regeneration: isRegeneration,
     });
     return response.data;
   } catch (error) {
@@ -200,11 +202,42 @@ export const executeWebSearch = async (
   }
 };
 
+export const getRegenerationCounts = async (
+  userId: string
+): Promise<{ quick_count: number; full_count: number }> => {
+  try {
+    const response = await axios.get(`${API_BASE_URL}/ai/regen-counts/`, {
+      params: { user_id: userId },
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching regeneration counts:", error);
+    return { quick_count: 0, full_count: 0 };
+  }
+};
+
+export const incrementRegenerationCount = async (
+  userId: string,
+  type: "quick" | "full"
+): Promise<{ quick_count: number; full_count: number }> => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/ai/increment-regen/`, {
+      user_id: userId,
+      type,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error incrementing regeneration count:", error);
+    return { quick_count: 0, full_count: 0 };
+  }
+};
+
 export const synthesizeAnalysis = async (
   jobDescription: string,
   quizScore: number,
   riskLevel: string,
-  searchResults: { trends?: string; tools?: string; benchmarks?: string }
+  searchResults: { trends?: string; tools?: string; benchmarks?: string },
+  isRegeneration: boolean = false
 ): Promise<AIAnalysis> => {
   try {
     const response = await axios.post(`${API_BASE_URL}/ai/synthesize/`, {
@@ -212,6 +245,7 @@ export const synthesizeAnalysis = async (
       quiz_score: quizScore,
       risk_level: riskLevel,
       search_results: searchResults,
+      is_regeneration: isRegeneration,
     });
     return response.data;
   } catch (error) {

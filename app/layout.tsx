@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { MantineProvider, createTheme } from "@mantine/core";
+import { Notifications } from "@mantine/notifications";
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import "../styles/globals.css";
@@ -46,6 +47,7 @@ export default function RootLayout({
     <html lang="en">
       <body>
         <MantineProvider theme={theme} defaultColorScheme="dark">
+          <Notifications position="top-center" zIndex={2000} />
           <Header />
           {children}
         </MantineProvider>
