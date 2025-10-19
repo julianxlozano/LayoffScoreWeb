@@ -27,7 +27,7 @@ interface ExpressCheckoutProps {
 }
 
 export default function ExpressCheckout({
-  amount = 999,
+  amount = 50,
   userId,
   onPaymentSuccess,
   onPaymentError,

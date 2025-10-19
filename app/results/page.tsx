@@ -858,19 +858,22 @@ export default function ResultsPage() {
                     Pay with Card - $9.99
                   </Button>
 
-                  <Button
-                    size="md"
-                    variant="outline"
-                    onClick={handlePaymentSuccess}
-                    fullWidth
-                    style={{
-                      marginTop: "8px",
-                      borderColor: "rgba(255, 255, 255, 0.3)",
-                      color: "rgba(255, 255, 255, 0.7)",
-                    }}
-                  >
-                    Skip Payment (Dev Only)
-                  </Button>
+                  {/* Dev bypass button - only show in development */}
+                  {process.env.NODE_ENV === "development" && (
+                    <Button
+                      size="md"
+                      variant="outline"
+                      onClick={handlePaymentSuccess}
+                      fullWidth
+                      style={{
+                        marginTop: "8px",
+                        borderColor: "rgba(255, 255, 255, 0.3)",
+                        color: "rgba(255, 255, 255, 0.7)",
+                      }}
+                    >
+                      Skip Payment (Dev Only)
+                    </Button>
+                  )}
 
                   <Text size="xs" color="dimmed" ta="center">
                     🔒 Secure checkout • 30-day guarantee
