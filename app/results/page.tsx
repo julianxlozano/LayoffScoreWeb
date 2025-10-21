@@ -55,6 +55,11 @@ import { generatePDF } from "@/utils/pdfGenerator";
 import { Elements } from "@stripe/react-stripe-js";
 import { stripePromise } from "@/utils/payment";
 import ExpressCheckout from "@/components/ExpressCheckout";
+import {
+  PRICE_CENTS,
+  PRICE_DISPLAY,
+  ORIGINAL_PRICE,
+} from "@/constants/pricing";
 import styles from "./page.module.css";
 
 // Set to a number (e.g., 20, 50, 65, 90) to preview states; null uses real backend/local calc
@@ -817,10 +822,10 @@ export default function ResultsPage() {
                       color="dimmed"
                       style={{ textDecoration: "line-through" }}
                     >
-                      $39
+                      {ORIGINAL_PRICE}
                     </Text>
                     <Text size="48px" fw={700} color="white">
-                      $0.50
+                      {PRICE_DISPLAY}
                     </Text>
                     <Text size="sm" color="dimmed">
                       one-time
@@ -831,7 +836,7 @@ export default function ResultsPage() {
                     stripe={stripePromise}
                     options={{
                       mode: "payment",
-                      amount: 50,
+                      amount: PRICE_CENTS,
                       currency: "usd",
                       appearance: {
                         theme: "night",
@@ -840,7 +845,7 @@ export default function ResultsPage() {
                     }}
                   >
                     <ExpressCheckout
-                      amount={50}
+                      amount={PRICE_CENTS}
                       userId={userId?.toString()}
                       onPaymentSuccess={handlePaymentSuccess}
                     />
@@ -855,7 +860,7 @@ export default function ResultsPage() {
                     style={{ backgroundColor: "#ff4444", border: "none" }}
                     onClick={handlePaymentSuccess}
                   >
-                    Pay with Card - $0.50
+                    Pay with Card - {PRICE_DISPLAY}
                   </Button>
 
                   {/* Dev bypass button - only show in development */}

@@ -92,29 +92,18 @@ export default function QuizPage() {
   return (
     <div className={styles.gradient}>
       <Container size="md" className={styles.container}>
-        {/* Back button and progress */}
-        <div className={styles.headerSection}>
-          <ActionIcon
-            variant="subtle"
-            size="lg"
-            onClick={handleBack}
-            className={styles.backButton}
-          >
-            <IconArrowLeft size={20} />
-          </ActionIcon>
-
-          <div className={styles.progressContainer}>
-            <Text size="sm" className={styles.progressText}>
-              Question {currentQuestionIndex + 1} of {QUIZ_QUESTIONS.length}
-            </Text>
-            <Progress
-              value={progress}
-              size="md"
-              radius="md"
-              color="#FF4444"
-              className={styles.progressBar}
-            />
-          </div>
+        {/* Progress only */}
+        <div className={styles.progressContainer}>
+          <Text size="sm" className={styles.progressText}>
+            Question {currentQuestionIndex + 1} of {QUIZ_QUESTIONS.length}
+          </Text>
+          <Progress
+            value={progress}
+            size="md"
+            radius="md"
+            color="#FF4444"
+            className={styles.progressBar}
+          />
         </div>
 
         {/* Question card or Job Input */}
@@ -208,19 +197,43 @@ export default function QuizPage() {
           </Card>
         )}
 
-        {/* Next button */}
-        <Button
-          size="lg"
-          disabled={showJobInput ? !jobDescription.trim() : !selectedOption}
-          onClick={handleNext}
-          className={styles.nextButton}
+        {/* Back and Next buttons */}
+        <div
+          style={{
+            display: "flex",
+            gap: "12px",
+            width: "100%",
+            alignItems: "center",
+          }}
         >
-          {showJobInput
-            ? "Continue to Payment"
-            : currentQuestionIndex === QUIZ_QUESTIONS.length - 1
-            ? "Next"
-            : "Next"}
-        </Button>
+          <ActionIcon
+            size={56}
+            variant="outline"
+            onClick={handleBack}
+            className={styles.backButton}
+            style={{
+              borderColor: "rgba(255, 255, 255, 0.2)",
+              color: "white",
+              minHeight: "56px",
+              alignSelf: "center",
+            }}
+          >
+            <IconArrowLeft size={24} />
+          </ActionIcon>
+          <Button
+            size="lg"
+            disabled={showJobInput ? !jobDescription.trim() : !selectedOption}
+            onClick={handleNext}
+            className={styles.nextButton}
+            style={{ flex: 1, marginTop: 0 }}
+          >
+            {showJobInput
+              ? "Get My Score"
+              : currentQuestionIndex === QUIZ_QUESTIONS.length - 1
+              ? "Next"
+              : "Next"}
+          </Button>
+        </div>
       </Container>
     </div>
   );

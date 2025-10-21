@@ -9,6 +9,7 @@ import {
 } from "@stripe/react-stripe-js";
 import { Loader, Text } from "@mantine/core";
 import { createPaymentIntent } from "@/utils/payment";
+import { PRICE_CENTS } from "@/constants/pricing";
 import styles from "./ExpressCheckout.module.css";
 
 // Helper function to detect mobile devices
@@ -27,7 +28,7 @@ interface ExpressCheckoutProps {
 }
 
 export default function ExpressCheckout({
-  amount = 50,
+  amount = PRICE_CENTS,
   userId,
   onPaymentSuccess,
   onPaymentError,

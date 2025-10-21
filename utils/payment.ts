@@ -1,5 +1,6 @@
 import { loadStripe } from "@stripe/stripe-js";
 import axios from "axios";
+import { PRICE_CENTS } from "@/constants/pricing";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api";
@@ -27,7 +28,7 @@ export const createCheckoutSession = async (userId?: string) => {
 };
 
 export const createPaymentIntent = async (
-  amount: number = 50,
+  amount: number = PRICE_CENTS,
   userId?: string
 ) => {
   try {
