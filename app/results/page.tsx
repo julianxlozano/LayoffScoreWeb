@@ -60,6 +60,13 @@ import {
   PRICE_DISPLAY,
   ORIGINAL_PRICE,
 } from "@/constants/pricing";
+import {
+  trackQuizCompleted,
+  trackPaymentSuccessful,
+  trackAnalysisViewed,
+  trackAnalysisRegenerated,
+  trackPDFDownloaded,
+} from "@/utils/analytics";
 import styles from "./page.module.css";
 
 // Set to a number (e.g., 20, 50, 65, 90) to preview states; null uses real backend/local calc
@@ -261,6 +268,9 @@ export default function ResultsPage() {
         setResult(scoreResult);
         setLoading(false); // Score loaded, hide loading screen
 
+        // Track quiz completion
+        trackQuizCompleted(scoreResult.score, scoreResult.risk_level);
+
         // ALWAYS generate quick assessment (even before payment for teaser)
         const jobDescription = sessionStorage.getItem("jobDescription");
         if (jobDescription && scoreResult) {
@@ -272,6 +282,11 @@ export default function ResultsPage() {
               scoreResult.risk_level
             );
             setQuickAnalysis(quick);
+
+            // Track quick analysis viewed
+            if (quick.success) {
+              trackAnalysisViewed("quick");
+            }
           } catch (error) {
             console.error("Error generating quick analysis:", error);
           } finally {
@@ -416,6 +431,9 @@ export default function ResultsPage() {
   }, [router]);
 
   const handlePaymentSuccess = async () => {
+    // Track payment success
+    trackPaymentSuccessful(PRICE_CENTS, "card"); // We'll update with actual method later
+
     // Mark as paid and trigger AI analysis
     sessionStorage.setItem("payment_verified", "true");
     setIsPaid(true);
@@ -515,9 +533,15 @@ export default function ResultsPage() {
       setAiAnalysis(analysis);
       setAiProgress("");
 
+      // Track comprehensive analysis viewed
+      if (analysis.success) {
+        trackAnalysisViewed("comprehensive");
+      }
+
       // Update local count if this was a regeneration and successful
       if (isRegeneration && analysis.success) {
         setFullRegenCount((prev) => prev + 1);
+        trackAnalysisRegenerated("comprehensive");
       }
     } catch (error: any) {
       // Check if it's a rate limit error
@@ -568,6 +592,7 @@ export default function ResultsPage() {
       // Update local count if successful (backend already incremented)
       if (quick.success) {
         setQuickRegenCount((prev) => prev + 1);
+        trackAnalysisRegenerated("quick");
       }
     } catch (error: any) {
       console.error("Error regenerating quick analysis:", error);
@@ -624,6 +649,9 @@ export default function ResultsPage() {
         userName: jobDescription,
         date: new Date(),
       });
+
+      // Track PDF download
+      trackPDFDownloaded();
     } catch (error) {
       console.error("Error generating PDF:", error);
     } finally {

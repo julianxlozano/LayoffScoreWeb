@@ -10,6 +10,7 @@ import {
 import { Loader, Text } from "@mantine/core";
 import { createPaymentIntent } from "@/utils/payment";
 import { PRICE_CENTS } from "@/constants/pricing";
+import { trackPaymentSuccessful } from "@/utils/analytics";
 import styles from "./ExpressCheckout.module.css";
 
 // Helper function to detect mobile devices
@@ -69,6 +70,9 @@ export default function ExpressCheckout({
       // If we get here, payment was successful
       // Store verification and redirect
       sessionStorage.setItem("payment_verified", "true");
+
+      // Track payment success (express checkout method - could be google_pay, apple_pay, link)
+      trackPaymentSuccessful(amount, "express_checkout");
 
       if (onPaymentSuccess) {
         onPaymentSuccess();

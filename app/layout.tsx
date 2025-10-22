@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect } from "react";
+import Script from "next/script";
 import { MantineProvider, createTheme } from "@mantine/core";
 import { Notifications } from "@mantine/notifications";
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
 import "../styles/globals.css";
 import Header from "@/components/Header";
+
+const GA_MEASUREMENT_ID = "G-NH7YX4KQN6";
 
 const theme = createTheme({
   primaryColor: "red",
@@ -46,6 +49,20 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
+        {/* Google Analytics */}
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${GA_MEASUREMENT_ID}');
+          `}
+        </Script>
+
         <MantineProvider theme={theme} defaultColorScheme="dark">
           <Notifications position="top-center" zIndex={2000} />
           <Header />

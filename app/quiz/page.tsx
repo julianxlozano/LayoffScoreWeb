@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Container,
@@ -17,6 +17,11 @@ import {
 } from "@mantine/core";
 import { IconArrowLeft } from "@tabler/icons-react";
 import { QUIZ_QUESTIONS, mapFirstQuestionToBoolean } from "@/constants/quiz";
+import {
+  trackQuizStarted,
+  trackQuizQuestionAnswered,
+  trackJobDescriptionEntered,
+} from "@/utils/analytics";
 import styles from "./page.module.css";
 
 export default function QuizPage() {
@@ -33,10 +38,16 @@ export default function QuizPage() {
   const currentStep = showJobInput ? totalSteps : currentQuestionIndex + 1;
   const progress = (currentStep / totalSteps) * 100;
 
+  // Track quiz started on mount
+  useEffect(() => {
+    trackQuizStarted();
+  }, []);
+
   const handleNext = () => {
     if (showJobInput) {
       // Submit from job description page
       if (!jobDescription.trim()) return;
+      trackJobDescriptionEntered();
       submitQuiz(answers);
       return;
     }
@@ -46,6 +57,9 @@ export default function QuizPage() {
     const newAnswers = [...answers];
     newAnswers[currentQuestionIndex] = selectedOption;
     setAnswers(newAnswers);
+
+    // Track question answered
+    trackQuizQuestionAnswered(currentQuestionIndex + 1);
 
     if (currentQuestionIndex < QUIZ_QUESTIONS.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
