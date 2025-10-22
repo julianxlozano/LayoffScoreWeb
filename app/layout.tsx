@@ -48,6 +48,13 @@ export default function RootLayout({
 
   return (
     <html lang="en">
+      <head>
+        <title>LayoffScore - Know Your Job Security</title>
+        <meta
+          name="description"
+          content="Discover your layoff risk score and get personalized insights to protect your career."
+        />
+      </head>
       <body>
         {/* Google Analytics */}
         <Script
