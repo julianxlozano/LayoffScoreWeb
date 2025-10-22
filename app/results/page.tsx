@@ -53,7 +53,7 @@ import {
 import { getRiskColor, getScreenGradient, hexToRgba } from "@/utils/colors";
 import { generatePDF } from "@/utils/pdfGenerator";
 import { Elements } from "@stripe/react-stripe-js";
-import { stripePromise } from "@/utils/payment";
+import { stripePromise, redirectToCheckout } from "@/utils/payment";
 import ExpressCheckout from "@/components/ExpressCheckout";
 import {
   PRICE_CENTS,
@@ -886,7 +886,13 @@ export default function ResultsPage() {
                     fullWidth
                     leftSection={<IconCreditCard size={24} />}
                     style={{ backgroundColor: "#ff4444", border: "none" }}
-                    onClick={handlePaymentSuccess}
+                    onClick={async () => {
+                      try {
+                        await redirectToCheckout(userId?.toString());
+                      } catch (error) {
+                        console.error("Checkout error:", error);
+                      }
+                    }}
                   >
                     Pay with Card - {PRICE_DISPLAY}
                   </Button>
