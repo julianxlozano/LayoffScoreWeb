@@ -21,6 +21,8 @@ import {
   trackQuizStarted,
   trackQuizQuestionAnswered,
   trackJobDescriptionEntered,
+  trackQuizProgress,
+  trackQuizAbandoned,
 } from "@/utils/analytics";
 import styles from "./page.module.css";
 
@@ -41,7 +43,21 @@ export default function QuizPage() {
   // Track quiz started on mount
   useEffect(() => {
     trackQuizStarted();
-  }, []);
+
+    // Track abandonment on page unload
+    const handleBeforeUnload = () => {
+      // Only track abandonment if they haven't completed the quiz
+      if (!showJobInput) {
+        trackQuizAbandoned(currentQuestionIndex + 1, QUIZ_QUESTIONS.length);
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [currentQuestionIndex, showJobInput]);
 
   const handleNext = () => {
     if (showJobInput) {
@@ -58,8 +74,9 @@ export default function QuizPage() {
     newAnswers[currentQuestionIndex] = selectedOption;
     setAnswers(newAnswers);
 
-    // Track question answered
-    trackQuizQuestionAnswered(currentQuestionIndex + 1);
+    // Track question answered and progress
+    trackQuizQuestionAnswered(currentQuestionIndex + 1, selectedOption);
+    trackQuizProgress(currentQuestionIndex + 1, QUIZ_QUESTIONS.length);
 
     if (currentQuestionIndex < QUIZ_QUESTIONS.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);

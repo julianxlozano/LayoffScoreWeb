@@ -18,11 +18,47 @@ export const trackQuizStarted = () => {
   }
 };
 
-export const trackQuizQuestionAnswered = (questionNumber: number) => {
+export const trackQuizQuestionAnswered = (
+  questionNumber: number,
+  answer: string
+) => {
   if (typeof window !== "undefined" && window.gtag) {
     window.gtag("event", "quiz_question_answered", {
       event_category: "Quiz",
       question_number: questionNumber,
+      answer_type: answer === "Yes" ? "yes" : answer === "No" ? "no" : "other",
+    });
+  }
+};
+
+export const trackQuizProgress = (
+  questionNumber: number,
+  totalQuestions: number
+) => {
+  if (typeof window !== "undefined" && window.gtag) {
+    const progressPercent = Math.round((questionNumber / totalQuestions) * 100);
+    window.gtag("event", "quiz_progress", {
+      event_category: "Quiz",
+      question_number: questionNumber,
+      progress_percent: progressPercent,
+      // This helps identify drop-off points
+      funnel_step: `question_${questionNumber}`,
+    });
+  }
+};
+
+export const trackQuizAbandoned = (
+  questionNumber: number,
+  totalQuestions: number
+) => {
+  if (typeof window !== "undefined" && window.gtag) {
+    window.gtag("event", "quiz_abandoned", {
+      event_category: "Quiz",
+      abandon_point: questionNumber,
+      questions_completed: questionNumber - 1,
+      completion_rate: Math.round(
+        ((questionNumber - 1) / totalQuestions) * 100
+      ),
     });
   }
 };

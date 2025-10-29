@@ -2,11 +2,30 @@
 
 import { Button, Container, Text, Group, Box } from "@mantine/core";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 import styles from "./page.module.css";
 import ShieldBadge from "@/components/ShieldBadge";
+import { trackPageView } from "@/utils/analytics";
 
 export default function LandingPage() {
   const router = useRouter();
+
+  // Track landing page view
+  useEffect(() => {
+    trackPageView("/");
+  }, []);
+
+  const handleStartQuiz = () => {
+    // Track CTA click before navigation
+    if (typeof window !== "undefined" && window.gtag) {
+      window.gtag("event", "cta_clicked", {
+        event_category: "Landing",
+        cta_text: "Learn My Risk",
+        page_location: "homepage",
+      });
+    }
+    router.push("/quiz");
+  };
 
   return (
     <div className={styles.gradient}>
@@ -38,11 +57,7 @@ export default function LandingPage() {
           </Group>
 
           {/* CTA Button */}
-          <Button
-            size="lg"
-            className={styles.button}
-            onClick={() => router.push("/quiz")}
-          >
+          <Button size="lg" className={styles.button} onClick={handleStartQuiz}>
             Learn My Risk
           </Button>
         </div>
