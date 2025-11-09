@@ -2,9 +2,9 @@
   background: linear-gradient(180deg, #1a1a1a 0%, #2d1f1f 100%);
   min-height: calc(100vh - 64px);
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px 0;
+  align-items: flex-start;
+  justify-content: flex-start;
+  padding: 100px 0 20px;
 }
 
 .container {
@@ -16,24 +16,55 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding-top: 20px;
+  padding-top: 0;
 }
 
 /* Compact CTA Styles */
 .compactCTA {
   margin-bottom: 32px;
+  margin-top: 0;
 }
 
-.iconContainerSmall {
-  margin-bottom: 16px;
+.titleContainer {
+  margin-bottom: 8px;
+  display: flex;
+  gap: 0.35em;
+  justify-content: center;
+  align-items: baseline;
+  flex-wrap: wrap;
 }
 
 .titleCompact {
   font-size: clamp(28px, 4vw, 36px);
   font-weight: bold;
   color: #ffffff;
-  margin-bottom: 8px;
   line-height: 1.2;
+}
+
+/* Shimmer Animation */
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    #ffffff 0%,
+    #ff6b6b 25%,
+    #ffffff 50%,
+    #ff6b6b 75%,
+    #ffffff 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: shimmer 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .subtitleCompact {
@@ -42,27 +73,15 @@
   margin-bottom: 0;
   line-height: 1.4;
   max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+  text-align: center;
 }
 
 /* Input Section Styles */
 .inputSection {
   width: 100%;
   max-width: 500px;
-}
-
-.inputLabel {
-  font-size: 18px;
-  font-weight: 600;
-  color: #ffffff;
-  margin-bottom: 4px;
-  text-align: left;
-}
-
-.inputHelper {
-  font-size: 14px;
-  color: #b0b0b0;
-  text-align: left;
-  line-height: 1.4;
 }
 
 .textarea {
@@ -134,4 +153,77 @@
 .button:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Loading Overlay */
+.loadingOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(26, 26, 26, 0.95);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  animation: fadeIn 0.3s ease-in;
+}
+
+.loadingContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+}
+
+.coinFlip {
+  animation: flipCoin 1.5s ease-in-out infinite;
+  transform-style: preserve-3d;
+}
+
+@keyframes flipCoin {
+  0% {
+    transform: rotateY(0deg);
+  }
+  50% {
+    transform: rotateY(180deg);
+  }
+  100% {
+    transform: rotateY(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.loadingText {
+  font-size: 24px;
+  font-weight: 600;
+  color: #ffffff;
+  text-align: center;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.loadingSubtext {
+  font-size: 16px;
+  color: #b0b0b0;
+  text-align: center;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
 }

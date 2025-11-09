@@ -2,11 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Container, Text, Textarea, Button, Stack, Box } from "@mantine/core";
+import { Container, Text, Textarea, Button, Stack } from "@mantine/core";
+import { Aboreto } from "next/font/google";
 import styles from "./page.module.css";
 import ShieldBadge from "@/components/ShieldBadge";
 import { trackPageView } from "@/utils/analytics";
 import { createAnonymousUser, calculateAIScore } from "@/utils/api";
+
+const aboreto = Aboreto({
+  weight: ["400"],
+  subsets: ["latin"],
+});
 
 export default function LandingPage() {
   const router = useRouter();
@@ -64,16 +70,35 @@ export default function LandingPage() {
 
   return (
     <div className={styles.gradient}>
+      {/* Loading Overlay */}
+      {isSubmitting && (
+        <div className={styles.loadingOverlay}>
+          <div className={styles.loadingContent}>
+            <div className={styles.coinFlip}>
+              <ShieldBadge size={120} />
+            </div>
+            <Text className={styles.loadingText}>
+              Analyzing your career risk...
+            </Text>
+            <Text className={styles.loadingSubtext}>
+              Our AI is evaluating your job security
+            </Text>
+          </div>
+        </div>
+      )}
+
       <Container size="sm" className={styles.container}>
         <div className={styles.content}>
           {/* Compact CTAs at the top */}
           <div className={styles.compactCTA}>
-            <div className={styles.iconContainerSmall}>
-              <ShieldBadge size={80} />
+            <div className={styles.titleContainer}>
+              <Text className={`${styles.titleCompact} ${aboreto.className}`}>
+                Secure Your Future
+              </Text>
+              <Text className={`${styles.titleCompact} ${styles.shimmer} ${aboreto.className}`}>
+                Against AI
+              </Text>
             </div>
-            <Text className={styles.titleCompact}>
-              Secure Your Future Against AI
-            </Text>
             <Text className={styles.subtitleCompact}>
               Get your personalized AI risk score in seconds
             </Text>
@@ -81,17 +106,8 @@ export default function LandingPage() {
 
           {/* Job Description Input */}
           <Stack gap="md" className={styles.inputSection}>
-            <Box>
-              <Text className={styles.inputLabel}>
-                Tell us about your work
-              </Text>
-              <Text className={styles.inputHelper}>
-                Describe your job, daily tasks, and what makes your role unique
-              </Text>
-            </Box>
-
             <Textarea
-              placeholder="Example: I'm a Senior Software Engineer at a fintech startup. I spend my days writing React code, reviewing PRs, mentoring junior devs, and architecting new features. Our tech stack includes React, Node.js, PostgreSQL, and AWS."
+              placeholder="Tell us about your work. Example: I'm a Senior Software Engineer at a fintech startup..."
               value={jobDescription}
               onChange={(e) => setJobDescription(e.currentTarget.value)}
               minRows={6}
