@@ -248,31 +248,67 @@ export default function ResultsPage() {
         return;
       }
 
-      // Get answers from sessionStorage
-      const answersStr = sessionStorage.getItem("quizAnswers");
-      if (!answersStr) {
-        console.error("No quiz answers found in sessionStorage");
-        setLoading(false);
-        router.push("/");
-        return;
-      }
+      // Check if we have data from the NEW AI flow (landing page with job description)
+      const storedScore = sessionStorage.getItem("quizScore");
+      const storedRiskLevel = sessionStorage.getItem("riskLevel");
+      const storedRiskMessage = sessionStorage.getItem("riskMessage");
+      const storedUserId = sessionStorage.getItem("userId");
+      const jobDescription = sessionStorage.getItem("jobDescription");
 
-      const answers = JSON.parse(answersStr);
+      let scoreResult: QuizResult;
 
       try {
-        // Create anonymous user and calculate score
-        const newUserId = await createAnonymousUser();
-        setUserId(newUserId);
-
-        const scoreResult = await calculateQuizScore(answers, newUserId);
+        if (storedScore && storedRiskLevel && storedRiskMessage) {
+        // New AI flow - score already calculated
+        scoreResult = {
+          score: parseInt(storedScore),
+          raw_score: 0, // Not used in AI scoring
+          risk_level: storedRiskLevel,
+          message: storedRiskMessage,
+          tips: [], // Will be populated if needed
+        };
+        
         setResult(scoreResult);
-        setLoading(false); // Score loaded, hide loading screen
+        setLoading(false);
 
-        // Track quiz completion
+        if (storedUserId) {
+          setUserId(parseInt(storedUserId));
+        }
+
+        // Track quiz completion (if not already tracked)
         trackQuizCompleted(scoreResult.score, scoreResult.risk_level);
+      } else {
+        // Legacy quiz flow - calculate from answers
+        const answersStr = sessionStorage.getItem("quizAnswers");
+        if (!answersStr) {
+          console.error("No quiz data found in sessionStorage");
+          setLoading(false);
+          router.push("/");
+          return;
+        }
+
+        const answers = JSON.parse(answersStr);
+
+        try {
+          // Create anonymous user and calculate score
+          const newUserId = await createAnonymousUser();
+          setUserId(newUserId);
+
+          scoreResult = await calculateQuizScore(answers, newUserId);
+          setResult(scoreResult);
+          setLoading(false); // Score loaded, hide loading screen
+
+          // Track quiz completion
+          trackQuizCompleted(scoreResult.score, scoreResult.risk_level);
+        } catch (error) {
+          console.error("Error calculating score:", error);
+          setError("Failed to calculate your score. Please try again.");
+          setLoading(false);
+          return;
+        }
+        }
 
         // ALWAYS generate quick assessment (even before payment for teaser)
-        const jobDescription = sessionStorage.getItem("jobDescription");
         if (jobDescription && scoreResult) {
           setLoadingQuick(true);
           try {
@@ -420,8 +456,8 @@ export default function ResultsPage() {
           }
         }
       } catch (error: any) {
-        console.error("Error calculating score:", error);
-        setError(error?.message || "Failed to calculate score");
+        console.error("Error in results flow:", error);
+        setError(error?.message || "Failed to load results");
         setLoading(false);
         // Don't redirect on error - let user see what happened
       }

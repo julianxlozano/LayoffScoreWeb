@@ -75,6 +75,45 @@ export const calculateQuizScore = async (
   }
 };
 
+export const calculateAIScore = async (
+  jobDescription: string,
+  userId?: number
+): Promise<QuizResult> => {
+  try {
+    const response = await axios.post(`${API_BASE_URL}/quiz/calculate-ai/`, {
+      job_description: jobDescription,
+      user_id: userId,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error calculating AI score:", error);
+    // Fallback to moderate risk
+    return {
+      score: 50,
+      raw_score: 0,
+      risk_level: "Moderate",
+      message: "Moderate AI risk. Automate one routine task and add one live touchpoint this week.",
+      tips: [
+        {
+          icon: "brain",
+          title: "Enhance Creative Skills",
+          description: "Focus on tasks requiring human creativity.",
+        },
+        {
+          icon: "account-group",
+          title: "Develop Human-Centric Skills",
+          description: "Cultivate emotional intelligence and leadership.",
+        },
+        {
+          icon: "school",
+          title: "Continuous Learning",
+          description: "Stay updated on AI advancements and adapt.",
+        },
+      ],
+    };
+  }
+};
+
 export const calculateScoreLocally = (answers: boolean[]): QuizResult => {
   // Local calculation as fallback
   let rawScore = 0;
