@@ -279,27 +279,27 @@ export default function ResultsPage() {
         trackQuizCompleted(scoreResult.score, scoreResult.risk_level);
       } else {
         // Legacy quiz flow - calculate from answers
-        const answersStr = sessionStorage.getItem("quizAnswers");
-        if (!answersStr) {
+      const answersStr = sessionStorage.getItem("quizAnswers");
+      if (!answersStr) {
           console.error("No quiz data found in sessionStorage");
-          setLoading(false);
-          router.push("/");
-          return;
-        }
+        setLoading(false);
+        router.push("/");
+        return;
+      }
 
-        const answers = JSON.parse(answersStr);
+      const answers = JSON.parse(answersStr);
 
-        try {
-          // Create anonymous user and calculate score
-          const newUserId = await createAnonymousUser();
-          setUserId(newUserId);
+      try {
+        // Create anonymous user and calculate score
+        const newUserId = await createAnonymousUser();
+        setUserId(newUserId);
 
           scoreResult = await calculateQuizScore(answers, newUserId);
-          setResult(scoreResult);
-          setLoading(false); // Score loaded, hide loading screen
+        setResult(scoreResult);
+        setLoading(false); // Score loaded, hide loading screen
 
-          // Track quiz completion
-          trackQuizCompleted(scoreResult.score, scoreResult.risk_level);
+        // Track quiz completion
+        trackQuizCompleted(scoreResult.score, scoreResult.risk_level);
         } catch (error) {
           console.error("Error calculating score:", error);
           setError("Failed to calculate your score. Please try again.");
