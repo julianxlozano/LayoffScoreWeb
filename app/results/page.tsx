@@ -437,7 +437,7 @@ export default function ResultsPage() {
                 jobDescription,
                 scoreResult.score,
                 scoreResult.risk_level,
-                newUserId.toString()
+                userId?.toString()
               );
               setAiAnalysis(analysis);
             } catch (fallbackError) {
